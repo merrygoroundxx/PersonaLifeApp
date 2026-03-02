@@ -8,12 +8,15 @@ import {
   Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
 import { getAIConfig, saveAIConfig } from "../services/aiService";
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 
 const THEME_STORAGE_KEY = "@persona_current_theme";
+const LANGUAGE_KEY = "@persona_current_language";
 
 export default function SettingsScreen() {
+  const { t, i18n } = useTranslation();
   const [apiKey, setApiKey] = useState("");
   const [baseURL, setBaseURL] = useState("");
   const [currentTheme, setCurrentTheme] = useState<PersonaTheme>("P5");
@@ -38,75 +41,188 @@ export default function SettingsScreen() {
     try {
       await saveAIConfig({ apiKey, baseURL });
       await AsyncStorage.setItem(THEME_STORAGE_KEY, currentTheme);
-      Alert.alert("Welcome to the Velvet Room", "Your configuration has been saved.");
+      Alert.alert(t("settings.title"), t("settings.save_success"));
     } catch (e) {
-      Alert.alert("Error", "Failed to save configuration.");
+      Alert.alert("Error", t("settings.save_error"));
     }
   };
 
+  const changeLanguage = async (lng: string) => {
+    await i18n.changeLanguage(lng);
+    await AsyncStorage.setItem(LANGUAGE_KEY, lng);
+  };
+
+  const themeConfig = THEME_CONFIGS[currentTheme];
+
   return (
-    <ScrollView className="flex-1 bg-[#000033] p-4">
+    <ScrollView
+      className="flex-1 p-4"
+      style={{ backgroundColor: themeConfig.colors.background }}
+    >
       {/* Velvet Room Style Header */}
-      <View className="mb-8 mt-4 border-b-2 border-blue-400 pb-4">
-        <Text className="text-blue-400 text-3xl font-serif italic text-center">
-          VELVET ROOM SETTINGS
+      <View
+        className="mb-8 mt-4 border-b-2 pb-4"
+        style={{ borderColor: themeConfig.colors.primary }}
+      >
+        <Text
+          className="text-3xl italic text-center"
+          style={{
+            color: themeConfig.colors.primary,
+            fontFamily: themeConfig.styles.fontFamily,
+          }}
+        >
+          {t("settings.title")}
         </Text>
-        <Text className="text-blue-200 text-xs text-center mt-2 tracking-widest">
-          A contract has been signed...
+        <Text
+          className="text-xs text-center mt-2 tracking-widest"
+          style={{ color: themeConfig.colors.text, opacity: 0.6 }}
+        >
+          {t("settings.contract_signed")}
         </Text>
+      </View>
+
+      {/* Language Selector */}
+      <View className="mb-8">
+        <Text
+          className="text-lg font-bold mb-4"
+          style={{ color: themeConfig.colors.text }}
+        >
+          {t("settings.language_label")}
+        </Text>
+        <View
+          className="flex-row justify-around"
+          style={{ transform: [{ skewX: themeConfig.styles.skew }] }}
+        >
+          {[
+            { code: "zh", label: "中文" },
+            { code: "en", label: "EN" },
+          ].map((lang) => (
+            <TouchableOpacity
+              key={lang.code}
+              onPress={() => changeLanguage(lang.code)}
+              className="px-6 py-3 border-2"
+              style={{
+                backgroundColor: i18n.language === lang.code
+                  ? themeConfig.colors.primary
+                  : "transparent",
+                borderColor: themeConfig.colors.primary,
+              }}
+            >
+              <Text
+                className="font-black"
+                style={{
+                  color: i18n.language === lang.code
+                    ? themeConfig.colors.accent
+                    : themeConfig.colors.text,
+                  transform: [{ skewX: `-${themeConfig.styles.skew}` }],
+                }}
+              >
+                {lang.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* Theme Selector */}
       <View className="mb-8">
-        <Text className="text-white text-lg font-bold mb-4">Choose Your Destiny (Theme)</Text>
+        <Text
+          className="text-lg font-bold mb-4"
+          style={{ color: themeConfig.colors.text }}
+        >
+          {t("settings.theme_label")}
+        </Text>
         <View className="flex-row justify-around">
           {(Object.keys(THEME_CONFIGS) as PersonaTheme[]).map((theme) => (
             <TouchableOpacity
               key={theme}
               onPress={() => setCurrentTheme(theme)}
-              className={`px-6 py-3 rounded-full border-2 ${
-                currentTheme === theme ? "bg-blue-600 border-white" : "bg-gray-800 border-transparent"
-              }`}
+              className="px-6 py-3 border-2"
+              style={{
+                backgroundColor: currentTheme === theme
+                  ? themeConfig.colors.primary
+                  : "transparent",
+                borderColor: themeConfig.colors.primary,
+                borderRadius: themeConfig.styles.borderRadius,
+                transform: [{ skewX: themeConfig.styles.skew }],
+              }}
             >
-              <Text className="text-white font-black">{theme}</Text>
+              <Text
+                className="font-black"
+                style={{
+                  color: currentTheme === theme
+                    ? themeConfig.colors.accent
+                    : themeConfig.colors.text,
+                  transform: [{ skewX: `-${themeConfig.styles.skew}` }],
+                }}
+              >
+                {theme}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
       {/* API Config */}
-      <View className="bg-blue-900/30 p-6 rounded-3xl border-2 border-blue-500/50">
-        <Text className="text-blue-300 font-bold mb-2">Cognitive API Key</Text>
+      <View
+        className="p-6 border-2"
+        style={{
+          backgroundColor: `${themeConfig.colors.accent}1A`,
+          borderColor: themeConfig.colors.primary,
+          borderRadius: themeConfig.styles.borderRadius,
+        }}
+      >
+        <Text
+          className="font-bold mb-2"
+          style={{ color: themeConfig.colors.text }}
+        >
+          {t("settings.api_key_label")}
+        </Text>
         <TextInput
-          className="bg-white/10 p-4 rounded-xl text-white mb-6 border border-blue-400/30"
+          className="bg-white p-4 rounded-xl text-black mb-6 border border-gray-300"
           placeholder="sk-..."
-          placeholderTextColor="#666"
+          placeholderTextColor="#999"
           secureTextEntry
           value={apiKey}
           onChangeText={setApiKey}
         />
 
-        <Text className="text-blue-300 font-bold mb-2">Cognitive Base URL</Text>
+        <Text
+          className="font-bold mb-2"
+          style={{ color: themeConfig.colors.text }}
+        >
+          {t("settings.api_url_label")}
+        </Text>
         <TextInput
-          className="bg-white/10 p-4 rounded-xl text-white mb-8 border border-blue-400/30"
+          className="bg-white p-4 rounded-xl text-black mb-8 border border-gray-300"
           placeholder="https://api.openai.com/v1"
-          placeholderTextColor="#666"
+          placeholderTextColor="#999"
           value={baseURL}
           onChangeText={setBaseURL}
         />
 
         <TouchableOpacity
           onPress={handleSave}
-          className="bg-blue-600 p-5 rounded-2xl transform skew-x-[-10deg] active:bg-blue-700"
+          className="p-5 active:opacity-80"
+          style={{
+            backgroundColor: themeConfig.colors.primary,
+            transform: [{ skewX: themeConfig.styles.skew }],
+          }}
         >
-          <Text className="text-white text-center font-black text-xl tracking-tighter skew-x-[10deg]">
-            SIGN THE CONTRACT
+          <Text
+            className="text-white text-center font-black text-xl tracking-tighter"
+            style={{
+              transform: [{ skewX: `-${themeConfig.styles.skew}` }],
+              color: themeConfig.colors.accent,
+            }}
+          >
+            {t("settings.save_btn")}
           </Text>
         </TouchableOpacity>
       </View>
 
       <Text className="text-gray-500 text-center mt-10 text-[10px]">
-        "I am thou, thou art I..."
+        {t("settings.iamthou")}
       </Text>
     </ScrollView>
   );

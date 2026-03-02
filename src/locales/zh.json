@@ -1,0 +1,45 @@
+{
+  "stats": {
+    "title": "五维参数",
+    "knowledge": "知识",
+    "courage": "勇气",
+    "charm": "魅力",
+    "kindness": "体贴",
+    "dexterity": "灵巧",
+    "expression": "表达",
+    "diligence": "毅力"
+  },
+  "home": {
+    "activity_placeholder": "例如：在便利店打工...",
+    "feeling_placeholder": "感觉如何？",
+    "submit_btn": "TAKE YOUR TIME",
+    "calendar_btn": "记忆 (记忆)",
+    "settings_btn": "天鹅绒房间 (设置)",
+    "export_btn": "导出数据",
+    "today_activity": "今日活动",
+    "feeling_label": "感想 / 思考",
+    "rank_up": "Rank Up!",
+    "stats_updated": "参数提升！"
+  },
+  "history": {
+    "title": "记忆",
+    "select_day": "选择日期",
+    "no_records": "这一天没有记忆。",
+    "records_title": "记录："
+  },
+  "settings": {
+    "title": "天鹅绒房间设置",
+    "contract_signed": "契约已签订...",
+    "theme_label": "选择你的命运 (主题)",
+    "language_label": "选择语言",
+    "api_key_label": "认知 API Key",
+    "api_url_label": "认知 Base URL",
+    "save_btn": "签订契约",
+    "save_success": "欢迎来到天鹅绒房间，你的配置已保存。",
+    "save_error": "保存配置失败。",
+    "iamthou": "“吾即汝，汝即吾……”"
+  },
+  "ai": {
+    "system_prompt": "你是一个 Persona 游戏的参数分析专家。分析用户的活动和感受，然后给 7 个核心维度分配分数 (0-3)。\n维度包括：[知识, 勇气, 魅力, 体贴, 灵巧, 表达, 毅力]。\n仅返回 JSON 对象。不要输出多余文字。"
+  }
+}

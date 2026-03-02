@@ -1,7 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 import { ActivityRecord } from "../utils/types";
 
@@ -9,6 +11,7 @@ const STORAGE_KEY = "@persona_activities";
 const THEME_STORAGE_KEY = "@persona_current_theme";
 
 export default function HistoryScreen() {
+  const { t } = useTranslation();
   const [activities, setActivities] = useState<ActivityRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [currentTheme, setCurrentTheme] = useState<PersonaTheme>("P5");
@@ -124,12 +127,14 @@ export default function HistoryScreen() {
               fontFamily: themeConfig.styles.fontFamily,
             }}
           >
-            {selectedDate ? `RECORDS: ${selectedDate}` : "SELECT A DAY"}
+            {selectedDate
+              ? `${t("history.records_title")} ${selectedDate}`
+              : t("history.select_day").toUpperCase()}
           </Text>
 
           {selectedRecords.length === 0 && selectedDate && (
             <Text className="text-gray-500 italic ml-2">
-              No memories found for this day.
+              {t("history.no_records")}
             </Text>
           )}
 
@@ -182,7 +187,7 @@ export default function HistoryScreen() {
                       style={{ backgroundColor: themeConfig.colors.primary }}
                     >
                       <Text className="text-white text-[10px] font-black uppercase">
-                        {key} +{val}
+                        {t(`stats.${key}`)} +{val}
                       </Text>
                     </View>
                   );

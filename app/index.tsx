@@ -3,15 +3,16 @@ import { File, Paths } from "expo-file-system";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
 import React, { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import AnimatedNumber from "../components/AnimatedNumber";
@@ -25,6 +26,7 @@ const THEME_STORAGE_KEY = "@persona_current_theme";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   // 输入状态
   const [activityName, setActivityName] = useState("");
@@ -126,11 +128,11 @@ export default function HomeScreen() {
       setFeeling("");
 
       // 5. 简单的反馈动画/Alert
-      let msg = "Stats Updated!\n";
+      let msg = t("home.stats_updated") + "\n";
       Object.entries(gainedStats).forEach(([k, v]) => {
-        if (v > 0) msg += `${k.toUpperCase()} +${v} ♪\n`;
+        if (v > 0) msg += `${t(`stats.${k}`).toUpperCase()} +${v} ♪\n`;
       });
-      Alert.alert("Rank Up!", msg);
+      Alert.alert(t("home.rank_up"), msg);
     } catch (error) {
       Alert.alert("Error", "The velvet room is closed currently.");
     } finally {
@@ -166,15 +168,6 @@ export default function HomeScreen() {
     }
   };
 
-  // 导入数据 (简单的覆盖逻辑，实际需更严谨)
-  const handleImport = async () => {
-    Alert.alert(
-      "Import",
-      "Feature to import JSON implementation required based on specific file picker library.",
-    );
-    // 这里通常需要 expo-document-picker 来选择文件
-  };
-
   return (
     <ScrollView
       className="flex-1 p-4"
@@ -194,13 +187,15 @@ export default function HomeScreen() {
           }}
         >
           <Text
-            className="font-black text-center text-xl italic"
+            className="font-black text-center italic"
+            numberOfLines={1}
             style={{
               color: themeConfig.colors.accent,
               fontFamily: themeConfig.styles.fontFamily,
+              fontSize: 20, // Initial size, can be adjusted dynamically if needed
             }}
           >
-            {themeConfig.name.toUpperCase()} STATS
+            {t("stats.title").toUpperCase()}
           </Text>
         </View>
 
@@ -218,7 +213,7 @@ export default function HomeScreen() {
                 className="text-[10px] font-bold opacity-70"
                 style={{ color: themeConfig.colors.text }}
               >
-                {stat.toUpperCase()}
+                {t(`stats.${stat}`).toUpperCase()}
               </Text>
               <AnimatedNumber
                 value={totalStats[stat]}
@@ -242,11 +237,11 @@ export default function HomeScreen() {
           className="mb-1 font-bold"
           style={{ color: themeConfig.colors.text }}
         >
-          Today's Activity
+          {t("home.today_activity")}
         </Text>
         <TextInput
           className="bg-white p-3 mb-4 rounded text-black font-medium"
-          placeholder="e.g. Worked at the convenience store..."
+          placeholder={t("home.activity_placeholder")}
           value={activityName}
           onChangeText={setActivityName}
         />
@@ -255,11 +250,11 @@ export default function HomeScreen() {
           className="mb-1 font-bold"
           style={{ color: themeConfig.colors.text }}
         >
-          Feeling / Thoughts
+          {t("home.feeling_label")}
         </Text>
         <TextInput
           className="bg-white p-3 mb-6 rounded text-black font-medium h-20"
-          placeholder="How did it go?"
+          placeholder={t("home.feeling_placeholder")}
           multiline
           textAlignVertical="top"
           value={feeling}
@@ -285,7 +280,7 @@ export default function HomeScreen() {
                 fontFamily: themeConfig.styles.fontFamily,
               }}
             >
-              TAKE YOUR TIME
+              {t("home.submit_btn")}
             </Text>
           )}
         </TouchableOpacity>
@@ -298,7 +293,7 @@ export default function HomeScreen() {
           style={{ backgroundColor: "#333", transform: [{ skewY: "1deg" }] }}
           onPress={() => router.push("/history")}
         >
-          <Text className="text-white font-bold">CALENDAR</Text>
+          <Text className="text-white font-bold">{t("home.calendar_btn")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -309,7 +304,7 @@ export default function HomeScreen() {
           }}
           onPress={() => router.push("/settings")}
         >
-          <Text className="text-white font-bold">VELVET ROOM</Text>
+          <Text className="text-white font-bold">{t("home.settings_btn")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -317,7 +312,7 @@ export default function HomeScreen() {
           style={{ backgroundColor: "#444" }}
           onPress={handleExport}
         >
-          <Text className="text-white font-bold">EXPORT</Text>
+          <Text className="text-white font-bold">{t("home.export_btn")}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

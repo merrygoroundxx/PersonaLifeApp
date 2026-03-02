@@ -1,0 +1,45 @@
+{
+  "stats": {
+    "title": "Social Stats",
+    "knowledge": "Knowledge",
+    "courage": "Courage",
+    "charm": "Charm",
+    "kindness": "Kindness",
+    "dexterity": "Proficiency",
+    "expression": "Expression",
+    "diligence": "Diligence"
+  },
+  "home": {
+    "activity_placeholder": "e.g. Worked at the convenience store...",
+    "feeling_placeholder": "How did it go?",
+    "submit_btn": "TAKE YOUR TIME",
+    "calendar_btn": "CALENDAR",
+    "settings_btn": "VELVET ROOM",
+    "export_btn": "EXPORT DATA",
+    "today_activity": "Today's Activity",
+    "feeling_label": "Feeling / Thoughts",
+    "rank_up": "Rank Up!",
+    "stats_updated": "Stats Updated!"
+  },
+  "history": {
+    "title": "Memories",
+    "select_day": "Select a date above",
+    "no_records": "No memories found for this day.",
+    "records_title": "RECORDS:"
+  },
+  "settings": {
+    "title": "VELVET ROOM SETTINGS",
+    "contract_signed": "A contract has been signed...",
+    "theme_label": "Choose Your Destiny (Theme)",
+    "language_label": "Select Language",
+    "api_key_label": "Cognitive API Key",
+    "api_url_label": "Cognitive Base URL",
+    "save_btn": "SIGN THE CONTRACT",
+    "save_success": "Welcome to the Velvet Room, your configuration has been saved.",
+    "save_error": "Failed to save configuration.",
+    "iamthou": "\"I am thou, thou art I...\""
+  },
+  "ai": {
+    "system_prompt": "You are a Persona game stat analyzer. Analyze the user's activity and feeling, then assign points (0-3) to each of the 7 core dimensions.\nDimensions: [knowledge, courage, charm, kindness, dexterity, expression, diligence].\nReturn ONLY a JSON object with these keys and their integer values.\nExample: {\"knowledge\": 2, \"courage\": 0, \"charm\": 0, \"kindness\": 1, \"dexterity\": 0, \"expression\": 0, \"diligence\": 0}"
+  }
+}
