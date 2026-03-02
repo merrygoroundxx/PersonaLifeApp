@@ -1,14 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+
+import PersonaBackground from "../components/PersonaBackground";
+import PersonaContainer from "../components/PersonaContainer";
 import PersonaModal from "../components/PersonaModal";
+import StickerText from "../components/StickerText";
 import { getAIConfig, saveAIConfig } from "../services/aiService";
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 
@@ -67,44 +65,37 @@ export default function SettingsScreen() {
   const themeConfig = THEME_CONFIGS[currentTheme];
 
   return (
-    <View className="flex-1">
-      <ScrollView
-        className="flex-1 p-4"
-        style={{ backgroundColor: themeConfig.colors.background }}
-      >
+    <PersonaBackground themeConfig={themeConfig}>
+      <ScrollView style={{ flex: 1, padding: 16 }}>
         {/* Velvet Room Style Header */}
-        <View
-          className="mb-8 mt-4 border-b-2 pb-4"
-          style={{ borderColor: themeConfig.colors.primary }}
+        <PersonaContainer
+          themeConfig={themeConfig}
+          style={{ marginBottom: 30, marginTop: 20 }}
         >
-          <Text
-            className="text-3xl italic text-center"
-            style={{
-              color: themeConfig.colors.primary,
-              fontFamily: themeConfig.styles.fontFamily,
-            }}
-          >
-            {t("settings.title")}
-          </Text>
-          <Text
-            className="text-xs text-center mt-2 tracking-widest"
-            style={{ color: themeConfig.colors.text, opacity: 0.6 }}
-          >
-            {t("settings.contract_signed")}
-          </Text>
-        </View>
+          <StickerText
+            text={t("settings.title").toUpperCase()}
+            themeConfig={themeConfig}
+            fontSize={24}
+            style={{ textAlign: "center" }}
+          />
+          <StickerText
+            text={t("settings.contract_signed")}
+            themeConfig={themeConfig}
+            fontSize={10}
+            style={{ textAlign: "center", marginTop: 5, opacity: 0.7 }}
+          />
+        </PersonaContainer>
 
         {/* Language Selector */}
-        <View className="mb-8">
-          <Text
-            className="text-lg font-bold mb-4"
-            style={{ color: themeConfig.colors.text }}
-          >
-            {t("settings.language_label")}
-          </Text>
+        <View style={{ marginBottom: 40 }}>
+          <StickerText
+            text={t("settings.language_label")}
+            themeConfig={themeConfig}
+            fontSize={18}
+            style={{ marginBottom: 15, marginLeft: 10 }}
+          />
           <View
-            className="flex-row justify-around"
-            style={{ transform: [{ skewX: themeConfig.styles.skew }] }}
+            style={{ flexDirection: "row", justifyContent: "space-around" }}
           >
             {[
               { code: "zh", label: "中文" },
@@ -113,90 +104,97 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 key={lang.code}
                 onPress={() => changeLanguage(lang.code)}
-                className="px-6 py-3 border-2"
                 style={{
+                  paddingHorizontal: 32,
+                  paddingVertical: 16,
+                  borderWidth: 2,
                   backgroundColor:
                     i18n.language === lang.code
                       ? themeConfig.colors.primary
-                      : "transparent",
-                  borderColor: themeConfig.colors.primary,
+                      : themeConfig.colors.secondary,
+                  borderColor: themeConfig.colors.accent,
+                  transform: [
+                    { rotate: `${(Math.random() - 0.5) * 10}deg` },
+                    { skewX: themeConfig.styles.skew },
+                  ],
                 }}
               >
-                <Text
-                  className="font-black"
-                  style={{
-                    color:
-                      i18n.language === lang.code
-                        ? themeConfig.colors.accent
-                        : themeConfig.colors.text,
-                    transform: [{ skewX: `-${themeConfig.styles.skew}` }],
-                  }}
-                >
-                  {lang.label}
-                </Text>
+                <StickerText
+                  text={lang.label}
+                  themeConfig={themeConfig}
+                  fontSize={16}
+                />
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         {/* Theme Selector */}
-        <View className="mb-8">
-          <Text
-            className="text-lg font-bold mb-4"
-            style={{ color: themeConfig.colors.text }}
+        <View style={{ marginBottom: 40 }}>
+          <StickerText
+            text={t("settings.theme_label")}
+            themeConfig={themeConfig}
+            fontSize={18}
+            style={{ marginBottom: 15, marginLeft: 10 }}
+          />
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-around",
+              flexWrap: "wrap",
+            }}
           >
-            {t("settings.theme_label")}
-          </Text>
-          <View className="flex-row justify-around">
             {(Object.keys(THEME_CONFIGS) as PersonaTheme[]).map((theme) => (
               <TouchableOpacity
                 key={theme}
                 onPress={() => setCurrentTheme(theme)}
-                className="px-6 py-3 border-2"
                 style={{
+                  paddingHorizontal: 24,
+                  paddingVertical: 16,
+                  borderWidth: 2,
                   backgroundColor:
                     currentTheme === theme
                       ? themeConfig.colors.primary
-                      : "transparent",
-                  borderColor: themeConfig.colors.primary,
+                      : themeConfig.colors.secondary,
+                  borderColor: themeConfig.colors.accent,
                   borderRadius: themeConfig.styles.borderRadius,
-                  transform: [{ skewX: themeConfig.styles.skew }],
+                  transform: [
+                    { skewX: themeConfig.styles.skew },
+                    { rotate: `${(Math.random() - 0.5) * 8}deg` },
+                  ],
                 }}
               >
-                <Text
-                  className="font-black"
-                  style={{
-                    color:
-                      currentTheme === theme
-                        ? themeConfig.colors.accent
-                        : themeConfig.colors.text,
-                    transform: [{ skewX: `-${themeConfig.styles.skew}` }],
-                  }}
-                >
-                  {theme}
-                </Text>
+                <StickerText
+                  text={theme}
+                  themeConfig={themeConfig}
+                  fontSize={16}
+                />
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
         {/* API Config */}
-        <View
-          className="p-6 border-2"
-          style={{
-            backgroundColor: `${themeConfig.colors.accent}1A`,
-            borderColor: themeConfig.colors.primary,
-            borderRadius: themeConfig.styles.borderRadius,
-          }}
+        <PersonaContainer
+          themeConfig={themeConfig}
+          style={{ marginBottom: 40 }}
         >
-          <Text
-            className="font-bold mb-2"
-            style={{ color: themeConfig.colors.text }}
-          >
-            {t("settings.api_key_label")}
-          </Text>
+          <StickerText
+            text={t("settings.api_key_label")}
+            themeConfig={themeConfig}
+            fontSize={14}
+            style={{ marginBottom: 10 }}
+          />
           <TextInput
-            className="bg-white p-4 rounded-xl text-black mb-6 border border-gray-300"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.9)",
+              padding: 16,
+              borderRadius: 8,
+              color: "#000",
+              fontWeight: "700",
+              marginBottom: 24,
+              transform: [{ rotate: "1deg" }],
+            }}
             placeholder="sk-..."
             placeholderTextColor="#999"
             secureTextEntry
@@ -204,14 +202,22 @@ export default function SettingsScreen() {
             onChangeText={setApiKey}
           />
 
-          <Text
-            className="font-bold mb-2"
-            style={{ color: themeConfig.colors.text }}
-          >
-            {t("settings.api_url_label")}
-          </Text>
+          <StickerText
+            text={t("settings.api_url_label")}
+            themeConfig={themeConfig}
+            fontSize={14}
+            style={{ marginBottom: 10 }}
+          />
           <TextInput
-            className="bg-white p-4 rounded-xl text-black mb-8 border border-gray-300"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.9)",
+              padding: 16,
+              borderRadius: 8,
+              color: "#000",
+              fontWeight: "700",
+              marginBottom: 32,
+              transform: [{ rotate: "-1deg" }],
+            }}
             placeholder="https://api.openai.com/v1"
             placeholderTextColor="#999"
             value={baseURL}
@@ -220,27 +226,29 @@ export default function SettingsScreen() {
 
           <TouchableOpacity
             onPress={handleSave}
-            className="p-5 active:opacity-80"
             style={{
+              padding: 20,
+              borderWidth: 2,
               backgroundColor: themeConfig.colors.primary,
-              transform: [{ skewX: themeConfig.styles.skew }],
+              borderColor: themeConfig.colors.accent,
+              transform: [{ skewX: themeConfig.styles.skew }, { scale: 1.1 }],
             }}
           >
-            <Text
-              className="text-white text-center font-black text-xl tracking-tighter"
-              style={{
-                transform: [{ skewX: `-${themeConfig.styles.skew}` }],
-                color: themeConfig.colors.accent,
-              }}
-            >
-              {t("settings.save_btn")}
-            </Text>
+            <StickerText
+              text={t("settings.save_btn")}
+              themeConfig={themeConfig}
+              fontSize={20}
+              style={{ textAlign: "center" }}
+            />
           </TouchableOpacity>
-        </View>
+        </PersonaContainer>
 
-        <Text className="text-gray-500 text-center mt-10 text-[10px]">
-          {t("settings.iamthou")}
-        </Text>
+        <StickerText
+          text={t("settings.iamthou")}
+          themeConfig={themeConfig}
+          fontSize={12}
+          style={{ textAlign: "center", marginBottom: 40, opacity: 0.5 }}
+        />
 
         <PersonaModal
           visible={modalVisible}
@@ -250,6 +258,6 @@ export default function SettingsScreen() {
           themeConfig={themeConfig}
         />
       </ScrollView>
-    </View>
+    </PersonaBackground>
   );
 }

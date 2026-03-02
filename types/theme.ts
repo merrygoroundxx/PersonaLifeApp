@@ -11,12 +11,18 @@ export interface ThemeConfig {
     background: string;
     accent: string;
     text: string;
+    shadow: string;
+    gradient?: string[];
   };
   styles: {
     skew: string;
+    rotation: number;
     borderRadius: number;
     fontFamily: string;
     borderWidth: number;
+    textureType: "noise" | "rainbow" | "glass";
+    containerType: "jagged" | "rounded-retro" | "glass-cut";
+    shadowOffset: { x: number; y: number };
   };
 }
 
@@ -30,12 +36,18 @@ export const THEME_CONFIGS: Record<PersonaTheme, ThemeConfig> = {
       background: "#001A33",
       accent: "#FFFFFF",
       text: "#FFFFFF",
+      shadow: "rgba(0, 174, 239, 0.3)",
+      gradient: ["#001A33", "#004B8D", "#001A33"],
     },
     styles: {
       skew: "0deg",
-      borderRadius: 20,
-      fontFamily: "System", // Should be Serif in real use
+      rotation: 0,
+      borderRadius: 0,
+      fontFamily: "System",
       borderWidth: 1,
+      textureType: "glass",
+      containerType: "glass-cut",
+      shadowOffset: { x: 0, y: 0 },
     },
   },
   P4: {
@@ -47,12 +59,17 @@ export const THEME_CONFIGS: Record<PersonaTheme, ThemeConfig> = {
       background: "#332200",
       accent: "#000000",
       text: "#000000",
+      shadow: "rgba(0, 0, 0, 0.5)",
     },
     styles: {
       skew: "0deg",
-      borderRadius: 0,
+      rotation: -3,
+      borderRadius: 30,
       fontFamily: "System",
-      borderWidth: 2,
+      borderWidth: 4,
+      textureType: "rainbow",
+      containerType: "rounded-retro",
+      shadowOffset: { x: 5, y: 5 },
     },
   },
   P5: {
@@ -64,12 +81,17 @@ export const THEME_CONFIGS: Record<PersonaTheme, ThemeConfig> = {
       background: "#121212",
       accent: "#FFFFFF",
       text: "#FFFFFF",
+      shadow: "#D32F2F",
     },
     styles: {
       skew: "-12deg",
+      rotation: 0,
       borderRadius: 0,
-      fontFamily: "System", // Should be "Ransom Note" style
+      fontFamily: "System",
       borderWidth: 3,
+      textureType: "noise",
+      containerType: "jagged",
+      shadowOffset: { x: 8, y: 8 },
     },
   },
 };

@@ -1,8 +1,24 @@
-import React from "react";
-import { View, Text } from "react-native";
-import Svg, { G, Line, Polygon, Circle, Text as SvgText } from "react-native-svg";
-import { PersonaStats, StatType } from "../utils/types";
+import React, { useEffect } from "react";
+import { View } from "react-native";
+import Animated, {
+  useAnimatedProps,
+  useSharedValue,
+  withSpring
+} from "react-native-reanimated";
+import Svg, {
+  Circle,
+  Defs,
+  G,
+  Line,
+  Polygon,
+  RadialGradient,
+  Stop,
+  Text as SvgText
+} from "react-native-svg";
 import { ThemeConfig } from "../types/theme";
+import { PersonaStats } from "../utils/types";
+
+const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
 
 interface RadarChartProps {
   stats: PersonaStats;
@@ -15,57 +31,97 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
   themeConfig,
   size = 300,
 }) => {
-  const { stats: activeStats, colors } = themeConfig;
+  const { stats: activeStats, colors, styles } = themeConfig;
   const numStats = activeStats.length;
   const center = size / 2;
-  const radius = (size / 2) * 0.7; // Leave space for labels
+  const radius = (size / 2) * 0.7;
   const angleStep = (2 * Math.PI) / numStats;
+  const maxValue = 50;
 
-  // Max value for each stat (assumed to be 100 for percentage)
-  const maxValue = 50; // Scaling: 50 points max for visualization
+  // Reanimated shared values for each stat
+  const animatedStats = activeStats.map(() => useSharedValue(0));
 
-  // Calculate vertex points
-  const points = activeStats.map((stat, i) => {
-    const value = stats[stat] || 0;
-    const r = (Math.min(value, maxValue) / maxValue) * radius;
-    const angle = i * angleStep - Math.PI / 2; // Start from top
+  useEffect(() => {
+    activeStats.forEach((stat, i) => {
+      animatedStats[i].value = withSpring(stats[stat] || 0, {
+        damping: 10,
+        stiffness: 80,
+      });
+    });
+  }, [stats, activeStats]);
+
+  const animatedProps = useAnimatedProps(() => {
+    const points = activeStats.map((_, i) => {
+      const value = animatedStats[i].value;
+      const r = (Math.min(value, maxValue) / maxValue) * radius;
+      const angle = i * angleStep - Math.PI / 2;
+      return {
+        x: center + r * Math.cos(angle),
+        y: center + r * Math.sin(angle),
+      };
+    });
     return {
-      x: center + r * Math.cos(angle),
-      y: center + r * Math.sin(angle),
+      points: points.map((p) => `${p.x},${p.y}`).join(" "),
     };
   });
 
-  const polygonPoints = points.map((p) => `${p.x},${p.y}`).join(" ");
-
-  // Background lines and grid
-  const gridLevels = [0.2, 0.4, 0.6, 0.8, 1.0];
-  const gridPolygons = gridLevels.map((level) => {
-    return activeStats
-      .map((_, i) => {
-        const angle = i * angleStep - Math.PI / 2;
-        const x = center + radius * level * Math.cos(angle);
-        const y = center + radius * level * Math.sin(angle);
-        return `${x},${y}`;
-      })
-      .join(" ");
-  });
+  const renderBackground = () => {
+    switch (styles.containerType) {
+      case "jagged": // P5
+        const jaggedPoints = activeStats
+          .map((_, i) => {
+            const angle = i * angleStep - Math.PI / 2;
+            const r = radius * (1 + (i % 2 === 0 ? 0.1 : -0.1));
+            return `${center + r * Math.cos(angle)},${center + r * Math.sin(angle)}`;
+          })
+          .join(" ");
+        return (
+          <Polygon
+            points={jaggedPoints}
+            fill={colors.secondary}
+            stroke={colors.primary}
+            strokeWidth={4}
+            strokeDasharray="10,5"
+          />
+        );
+      case "rounded-retro": // P4
+        return (
+          <Circle
+            cx={center}
+            cy={center}
+            r={radius}
+            fill={colors.secondary}
+            stroke={colors.accent}
+            strokeWidth={10}
+            strokeOpacity={0.2}
+          />
+        );
+      case "glass-cut": // P3
+        return (
+          <G>
+            <Defs>
+              <RadialGradient id="p3Grad" cx="50%" cy="50%" rx="50%" ry="50%">
+                <Stop offset="0" stopColor={colors.primary} stopOpacity="0.2" />
+                <Stop
+                  offset="1"
+                  stopColor={colors.background}
+                  stopOpacity="0.6"
+                />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={center} cy={center} r={radius} fill="url(#p3Grad)" />
+          </G>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <View style={{ alignItems: "center", justifyContent: "center" }}>
       <Svg width={size} height={size}>
+        {renderBackground()}
         <G>
-          {/* Grid lines */}
-          {gridPolygons.map((points, i) => (
-            <Polygon
-              key={i}
-              points={points}
-              fill="none"
-              stroke={colors.secondary}
-              strokeOpacity={0.3}
-              strokeWidth={1}
-            />
-          ))}
-
           {/* Axes */}
           {activeStats.map((_, i) => {
             const angle = i * angleStep - Math.PI / 2;
@@ -78,31 +134,26 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
                 y1={center}
                 x2={x2}
                 y2={y2}
-                stroke={colors.secondary}
-                strokeOpacity={0.3}
+                stroke={colors.accent}
+                strokeOpacity={0.2}
                 strokeWidth={1}
               />
             );
           })}
 
           {/* Stat Polygon */}
-          <Polygon
-            points={polygonPoints}
+          <AnimatedPolygon
+            animatedProps={animatedProps}
             fill={colors.primary}
-            fillOpacity={0.6}
-            stroke={colors.primary}
+            fillOpacity={styles.containerType === "glass-cut" ? 0.4 : 0.8}
+            stroke={colors.accent}
             strokeWidth={2}
           />
-
-          {/* Vertices */}
-          {points.map((p, i) => (
-            <Circle key={i} cx={p.x} cy={p.y} r={4} fill={colors.accent} />
-          ))}
 
           {/* Labels */}
           {activeStats.map((stat, i) => {
             const angle = i * angleStep - Math.PI / 2;
-            const labelRadius = radius + 25;
+            const labelRadius = radius + 35;
             const x = center + labelRadius * Math.cos(angle);
             const y = center + labelRadius * Math.sin(angle);
 
@@ -112,10 +163,17 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
                 x={x}
                 y={y}
                 fill={colors.text}
-                fontSize={12}
-                fontWeight="bold"
+                fontSize={styles.containerType === "jagged" ? 14 : 12}
+                fontWeight="900"
                 textAnchor="middle"
                 alignmentBaseline="middle"
+                style={{
+                  fontFamily: styles.fontFamily,
+                  transform:
+                    styles.containerType === "jagged"
+                      ? [{ rotate: `${(Math.random() - 0.5) * 20}deg` }]
+                      : [],
+                }}
               >
                 {stat.toUpperCase()}
               </SvgText>

@@ -2,7 +2,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, TouchableOpacity, View } from "react-native";
+import PersonaBackground from "../components/PersonaBackground";
+import PersonaContainer from "../components/PersonaContainer";
+import StickerText from "../components/StickerText";
 
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 import { ActivityRecord } from "../utils/types";
@@ -50,24 +53,29 @@ export default function HistoryScreen() {
     : [];
 
   return (
-    <View
-      className="flex-1"
-      style={{ backgroundColor: themeConfig.colors.background }}
-    >
-      <ScrollView className="flex-1">
+    <PersonaBackground themeConfig={themeConfig}>
+      <ScrollView style={{ flex: 1 }}>
         {/* 日历网格 */}
-        <View className="p-4">
-          <Text
-            className="text-2xl font-black mb-4 text-center"
+        <View style={{ padding: 16 }}>
+          <PersonaContainer
+            themeConfig={themeConfig}
+            style={{ marginBottom: 20, marginTop: 10 }}
+          >
+            <StickerText
+              text={format(today, "MMMM yyyy").toUpperCase()}
+              themeConfig={themeConfig}
+              fontSize={20}
+              style={{ textAlign: "center" }}
+            />
+          </PersonaContainer>
+
+          <View
             style={{
-              color: themeConfig.colors.primary,
-              fontFamily: themeConfig.styles.fontFamily,
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: "space-between",
             }}
           >
-            {format(today, "MMMM yyyy").toUpperCase()}
-          </Text>
-
-          <View className="flex-row flex-wrap justify-between">
             {daysInMonth.map((day) => {
               const dayStr = format(day, "yyyy-MM-dd");
               const hasActivity = activities.some((a) => a.date === dayStr);
@@ -77,33 +85,42 @@ export default function HistoryScreen() {
                 <TouchableOpacity
                   key={dayStr}
                   onPress={() => setSelectedDate(dayStr)}
-                  className="w-[13%] aspect-square mb-2 items-center justify-center"
                   style={{
+                    width: "13%",
+                    aspectRatio: 1,
+                    marginBottom: 8,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 2,
                     backgroundColor: isSelected
                       ? themeConfig.colors.primary
-                      : `${themeConfig.colors.accent}1A`,
+                      : themeConfig.colors.secondary,
+                    borderColor: hasActivity
+                      ? themeConfig.colors.accent
+                      : "transparent",
                     borderRadius: themeConfig.styles.borderRadius,
-                    borderWidth: hasActivity
-                      ? themeConfig.styles.borderWidth
-                      : 0,
-                    borderColor: themeConfig.colors.primary,
+                    transform: [
+                      { rotate: `${(Math.random() - 0.5) * 15}deg` },
+                      { scale: isSelected ? 1.1 : 1 },
+                    ],
                   }}
                 >
-                  <Text
-                    className="font-bold"
-                    style={{
-                      color: isSelected
-                        ? themeConfig.colors.accent
-                        : themeConfig.colors.text,
-                    }}
-                  >
-                    {format(day, "d")}
-                  </Text>
+                  <StickerText
+                    text={format(day, "d")}
+                    themeConfig={themeConfig}
+                    fontSize={14}
+                  />
                   {/* 活动指示点 */}
                   {hasActivity && !isSelected && (
                     <View
-                      className="absolute bottom-1 w-1 h-1 rounded-full"
-                      style={{ backgroundColor: themeConfig.colors.primary }}
+                      style={{
+                        position: "absolute",
+                        bottom: 4,
+                        width: 4,
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: themeConfig.colors.accent,
+                      }}
                     />
                   )}
                 </TouchableOpacity>
@@ -113,90 +130,97 @@ export default function HistoryScreen() {
         </View>
 
         {/* 详情列表 */}
-        <View
-          className="p-4 min-h-[300px] rounded-t-3xl border-t-4"
-          style={{
-            backgroundColor: `${themeConfig.colors.secondary}EE`,
-            borderColor: themeConfig.colors.primary,
-          }}
-        >
-          <Text
-            className="text-xl font-bold mb-4 ml-2 italic"
-            style={{
-              color: themeConfig.colors.accent,
-              fontFamily: themeConfig.styles.fontFamily,
-            }}
+        <View style={{ padding: 16, minHeight: 400 }}>
+          <PersonaContainer
+            themeConfig={themeConfig}
+            style={{ marginBottom: 20 }}
           >
-            {selectedDate
-              ? `${t("history.records_title")} ${selectedDate}`
-              : t("history.select_day").toUpperCase()}
-          </Text>
+            <StickerText
+              text={
+                selectedDate
+                  ? `${t("history.records_title")} ${selectedDate}`
+                  : t("history.select_day").toUpperCase()
+              }
+              themeConfig={themeConfig}
+              fontSize={16}
+            />
+          </PersonaContainer>
 
           {selectedRecords.length === 0 && selectedDate && (
-            <Text className="text-gray-500 italic ml-2">
-              {t("history.no_records")}
-            </Text>
+            <StickerText
+              text={t("history.no_records")}
+              themeConfig={themeConfig}
+              fontSize={14}
+              style={{ opacity: 0.6, marginLeft: 10 }}
+            />
           )}
 
           {selectedRecords.map((record) => (
-            <View
+            <PersonaContainer
               key={record.id}
-              className="p-4 mb-3 rounded border-l-4"
-              style={{
-                backgroundColor: `${themeConfig.colors.background}AA`,
-                borderColor: themeConfig.colors.primary,
-                transform: [{ skewX: themeConfig.styles.skew }],
-              }}
+              themeConfig={themeConfig}
+              style={{ marginBottom: 15 }}
             >
               <View
-                className="flex-row justify-between mb-1"
                 style={{
-                  transform: [{ skewX: `-${themeConfig.styles.skew}` }],
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
                 }}
               >
-                <Text className="text-white font-bold text-lg">
-                  {record.activityName}
-                </Text>
-                <Text className="text-gray-400 text-xs">
-                  {format(new Date(record.timestamp), "HH:mm")}
-                </Text>
+                <StickerText
+                  text={record.activityName}
+                  themeConfig={themeConfig}
+                  fontSize={18}
+                />
+                <StickerText
+                  text={format(new Date(record.timestamp), "HH:mm")}
+                  themeConfig={themeConfig}
+                  fontSize={12}
+                  style={{ opacity: 0.7 }}
+                />
               </View>
-              <Text
-                className="text-gray-300 text-sm mb-2"
-                style={{
-                  transform: [{ skewX: `-${themeConfig.styles.skew}` }],
-                }}
-              >
-                "{record.feeling}"
-              </Text>
+              <StickerText
+                text={`"${record.feeling}"`}
+                themeConfig={themeConfig}
+                fontSize={14}
+                style={{ marginBottom: 10, fontStyle: "italic" }}
+              />
 
-              {/* 显示提升的数值 (仅显示当前主题相关的) */}
-              <View
-                className="flex-row flex-wrap gap-2"
-                style={{
-                  transform: [{ skewX: `-${themeConfig.styles.skew}` }],
-                }}
-              >
+              {/* 显示提升的数值 */}
+              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {themeConfig.stats.map((key) => {
                   const val = record.gainedStats[key];
                   if (!val || val === 0) return null;
                   return (
                     <View
                       key={key}
-                      className="px-2 py-1 rounded"
-                      style={{ backgroundColor: themeConfig.colors.primary }}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 4,
+                        borderWidth: 1,
+                        marginRight: 8,
+                        marginBottom: 8,
+                        backgroundColor: themeConfig.colors.primary,
+                        borderColor: themeConfig.colors.accent,
+                        transform: [
+                          { rotate: `${(Math.random() - 0.5) * 10}deg` },
+                        ],
+                      }}
                     >
-                      <Text className="text-white text-[10px] font-black uppercase">
-                        {t(`stats.${key}`)} +{val}
-                      </Text>
+                      <StickerText
+                        text={`${t(`stats.${key}`)} +${val}`}
+                        themeConfig={themeConfig}
+                        fontSize={10}
+                      />
                     </View>
                   );
                 })}
               </View>
-            </View>
+            </PersonaContainer>
           ))}
         </View>
       </ScrollView>
-    </View>
+    </PersonaBackground>
   );
 }

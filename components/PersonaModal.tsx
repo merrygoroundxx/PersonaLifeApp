@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, Platform } from "react-native";
+import { Modal, Platform, Text, TouchableOpacity, View } from "react-native";
 import { ThemeConfig } from "../types/theme";
 
 interface PersonaModalProps {
@@ -24,10 +24,21 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-center items-center bg-black/80 p-6">
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "rgba(0,0,0,0.8)",
+          padding: 24,
+        }}
+      >
         <View
-          className="w-full max-w-sm border-2 overflow-hidden"
           style={{
+            width: "100%",
+            maxWidth: 400,
+            borderWidth: 2,
+            overflow: "hidden",
             backgroundColor: themeConfig.colors.background,
             borderColor: themeConfig.colors.primary,
             transform: [{ skewX: themeConfig.styles.skew }],
@@ -35,15 +46,19 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
         >
           {/* Header */}
           <View
-            className="p-3 border-b-2"
             style={{
+              padding: 12,
+              borderBottomWidth: 2,
               backgroundColor: themeConfig.colors.primary,
               borderColor: themeConfig.colors.accent,
             }}
           >
             <Text
-              className="font-black text-center text-lg italic"
               style={{
+                fontWeight: "900",
+                textAlign: "center",
+                fontSize: 18,
+                fontStyle: "italic",
                 color: themeConfig.colors.accent,
                 fontFamily: themeConfig.styles.fontFamily,
                 transform: [{ skewX: `-${themeConfig.styles.skew}` }],
@@ -54,10 +69,13 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
           </View>
 
           {/* Body */}
-          <View className="p-6">
+          <View style={{ padding: 24 }}>
             <Text
-              className="text-center font-bold text-base leading-6"
               style={{
+                textAlign: "center",
+                fontWeight: "700",
+                fontSize: 16,
+                lineHeight: 24,
                 color: themeConfig.colors.text,
                 transform: [{ skewX: `-${themeConfig.styles.skew}` }],
               }}
@@ -69,15 +87,20 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
           {/* Footer */}
           <TouchableOpacity
             onPress={onClose}
-            className="p-4 active:opacity-80 border-t-2"
             style={{
+              padding: 16,
+              borderTopWidth: 2,
               backgroundColor: themeConfig.colors.secondary,
               borderColor: themeConfig.colors.primary,
             }}
           >
             <Text
-              className="text-center font-black text-lg italic tracking-widest"
               style={{
+                textAlign: "center",
+                fontWeight: "900",
+                fontSize: 18,
+                fontStyle: "italic",
+                letterSpacing: 2,
                 color: themeConfig.colors.primary,
                 transform: [{ skewX: `-${themeConfig.styles.skew}` }],
               }}

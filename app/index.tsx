@@ -6,18 +6,19 @@ import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   ScrollView,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
 import AnimatedNumber from "../components/AnimatedNumber";
+import PersonaBackground from "../components/PersonaBackground";
+import PersonaContainer from "../components/PersonaContainer";
 import PersonaModal from "../components/PersonaModal";
 import StatRadarChart from "../components/StatRadarChart";
+import StickerText from "../components/StickerText";
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 import { analyzeActivityWithAI } from "../utils/aiModel";
 import { ActivityRecord, PersonaStats } from "../utils/types";
@@ -64,6 +65,13 @@ export default function HomeScreen() {
 
   const themeConfig = THEME_CONFIGS[currentTheme];
 
+  const safeNavigate = (path: any) => {
+    if (Platform.OS === "web") {
+      (document.activeElement as HTMLElement)?.blur();
+    }
+    router.push(path);
+  };
+
   // 加载本地数据并计算总分
   const loadData = async () => {
     try {
@@ -100,8 +108,7 @@ export default function HomeScreen() {
 
   // 提交处理
   const handleSubmit = async () => {
-    if (!activityName.trim())
-      return Alert.alert("Hold on!", "You need to do something first.");
+    if (!activityName.trim()) return; // 移除 Alert 改为静默
 
     setLoading(true);
     try {
@@ -180,160 +187,248 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView
-      className="flex-1 p-4"
-      style={{ backgroundColor: themeConfig.colors.background }}
-    >
-      {/* 1. 五维展示区 (动态雷达图) */}
-      <View
-        className="mb-8 items-center"
-        style={{ transform: [{ skewX: themeConfig.styles.skew }] }}
-      >
-        <View
-          className="p-1 border-2 mb-4 w-full"
-          style={{
-            backgroundColor: themeConfig.colors.primary,
-            borderColor: themeConfig.colors.accent,
-            transform: [{ skewX: `-${themeConfig.styles.skew}` }],
-          }}
-        >
-          <Text
-            className="font-black text-center italic"
-            numberOfLines={1}
+    <PersonaBackground themeConfig={themeConfig}>
+      <ScrollView style={{ flex: 1, padding: 16 }}>
+        {/* 1. 五维展示区 (动态雷达图) */}
+        <View style={{ marginBottom: 48, alignItems: "center" }}>
+          <PersonaContainer
+            themeConfig={themeConfig}
+            style={{ width: "100%", marginBottom: 20 }}
+          >
+            <StickerText
+              text={t("stats.title").toUpperCase()}
+              themeConfig={themeConfig}
+              fontSize={24}
+            />
+          </PersonaContainer>
+
+          <StatRadarChart
+            stats={totalStats}
+            themeConfig={themeConfig}
+            size={320}
+          />
+
+          {/* 详细数值显示 - 气泡/玻璃风格 */}
+          <View
             style={{
-              color: themeConfig.colors.accent,
-              fontFamily: themeConfig.styles.fontFamily,
-              fontSize: 20, // Initial size, can be adjusted dynamically if needed
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              marginTop: 32,
             }}
           >
-            {t("stats.title").toUpperCase()}
-          </Text>
+            {themeConfig.stats.map((stat) => (
+              <View key={stat} style={{ alignItems: "center", margin: 12 }}>
+                <View
+                  style={{
+                    backgroundColor: themeConfig.colors.primary,
+                    paddingHorizontal: 12,
+                    paddingVertical: 4,
+                    borderRadius: themeConfig.styles.borderRadius || 10,
+                    transform: [
+                      { skewX: themeConfig.styles.skew },
+                      { rotate: `${(Math.random() - 0.5) * 10}deg` },
+                    ],
+                  }}
+                >
+                  <StickerText
+                    text={t(`stats.${stat}`).toUpperCase()}
+                    themeConfig={themeConfig}
+                    fontSize={10}
+                  />
+                </View>
+                <AnimatedNumber
+                  value={totalStats[stat]}
+                  style={{
+                    marginTop: 8,
+                    fontSize: 24,
+                    fontWeight: "900",
+                    color: themeConfig.colors.primary,
+                    textShadowColor: themeConfig.colors.shadow,
+                    textShadowOffset: { width: 2, height: 2 },
+                    textShadowRadius: 1,
+                  }}
+                />
+              </View>
+            ))}
+          </View>
         </View>
 
-        <StatRadarChart
-          stats={totalStats}
+        {/* 2. 输入区域 */}
+        <PersonaContainer
           themeConfig={themeConfig}
-          size={300}
-        />
+          style={{ marginBottom: 40 }}
+        >
+          <StickerText
+            text={t("home.today_activity")}
+            themeConfig={themeConfig}
+            fontSize={16}
+            style={{ marginBottom: 10 }}
+          />
+          <TextInput
+            placeholder={t("home.activity_placeholder")}
+            value={activityName}
+            onChangeText={setActivityName}
+            style={{
+              backgroundColor: "rgba(255,255,255,0.9)",
+              padding: 16,
+              marginBottom: 24,
+              borderRadius: 8,
+              color: "#000",
+              fontWeight: "700",
+              transform: [{ rotate: "-1deg" }],
+              borderWidth: 2,
+              borderColor: themeConfig.colors.secondary,
+            }}
+          />
 
-        {/* 详细数值显示 */}
-        <View className="flex-row flex-wrap justify-center mt-4 gap-4">
-          {themeConfig.stats.map((stat) => (
-            <View key={stat} className="items-center">
-              <Text
-                className="text-[10px] font-bold opacity-70"
-                style={{ color: themeConfig.colors.text }}
-              >
-                {t(`stats.${stat}`).toUpperCase()}
-              </Text>
-              <AnimatedNumber
-                value={totalStats[stat]}
-                className="text-lg font-black"
-                style={{ color: themeConfig.colors.primary }}
+          <StickerText
+            text={t("home.feeling_label")}
+            themeConfig={themeConfig}
+            fontSize={16}
+            style={{ marginBottom: 10 }}
+          />
+          <TextInput
+            placeholder={t("home.feeling_placeholder")}
+            multiline
+            textAlignVertical="top"
+            value={feeling}
+            onChangeText={setFeeling}
+            style={{
+              backgroundColor: "rgba(255,255,255,0.9)",
+              padding: 16,
+              marginBottom: 32,
+              borderRadius: 8,
+              color: "#000",
+              fontWeight: "700",
+              height: 96,
+              transform: [{ rotate: "1deg" }],
+              borderWidth: 2,
+              borderColor: themeConfig.colors.secondary,
+            }}
+          />
+
+          <TouchableOpacity
+            style={{
+              padding: 20,
+              backgroundColor: loading ? "#666" : themeConfig.colors.primary,
+              transform: [{ skewX: themeConfig.styles.skew }, { scale: 1.05 }],
+              borderWidth: 2,
+              borderColor: themeConfig.colors.accent,
+            }}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <StickerText
+                text={t("home.submit_btn")}
+                themeConfig={themeConfig}
+                fontSize={20}
+                style={{ textAlign: "center" }}
               />
-            </View>
-          ))}
-        </View>
-      </View>
+            )}
+          </TouchableOpacity>
+        </PersonaContainer>
 
-      {/* 2. 输入区域 */}
-      <View
-        className="p-4 rounded-lg border-2 border-dashed"
-        style={{
-          backgroundColor: `${themeConfig.colors.accent}1A`, // 10% opacity
-          borderColor: themeConfig.colors.primary,
-        }}
-      >
-        <Text
-          className="mb-1 font-bold"
-          style={{ color: themeConfig.colors.text }}
-        >
-          {t("home.today_activity")}
-        </Text>
-        <TextInput
-          className="bg-white p-3 mb-4 rounded text-black font-medium"
-          placeholder={t("home.activity_placeholder")}
-          value={activityName}
-          onChangeText={setActivityName}
-        />
-
-        <Text
-          className="mb-1 font-bold"
-          style={{ color: themeConfig.colors.text }}
-        >
-          {t("home.feeling_label")}
-        </Text>
-        <TextInput
-          className="bg-white p-3 mb-6 rounded text-black font-medium h-20"
-          placeholder={t("home.feeling_placeholder")}
-          multiline
-          textAlignVertical="top"
-          value={feeling}
-          onChangeText={setFeeling}
-        />
-
-        <TouchableOpacity
-          className="p-4 transform active:scale-95"
+        {/* 3. 底部操作栏 - 打破网格 */}
+        <View
           style={{
-            backgroundColor: loading ? "#666" : themeConfig.colors.primary,
-            transform: [{ skewX: themeConfig.styles.skew }],
+            flexDirection: "row",
+            alignItems: "flex-end",
+            justifyContent: "space-around",
+            marginBottom: 80,
+            height: 128,
           }}
-          onPress={handleSubmit}
-          disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text
-              className="text-white text-center font-black text-xl tracking-widest"
+          <TouchableOpacity
+            style={{
+              padding: 16,
+              borderRadius: 40,
+              borderWidth: 2,
+              backgroundColor: themeConfig.colors.secondary,
+              borderColor: themeConfig.colors.primary,
+              width: 80,
+              height: 80,
+              transform: [{ rotate: "-15deg" }, { translateY: 10 }],
+            }}
+            onPress={() => safeNavigate("/history")}
+          >
+            <StickerText text="CAL" themeConfig={themeConfig} fontSize={12} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 4,
+              backgroundColor: themeConfig.colors.primary,
+              borderColor: themeConfig.colors.accent,
+              width: 120,
+              height: 120,
+              borderRadius: currentTheme === "P5" ? 0 : 60,
+              transform: [
+                { rotate: "5deg" },
+                { skewX: themeConfig.styles.skew },
+                { scale: 1.1 },
+              ],
+              shadowColor: themeConfig.colors.shadow,
+              shadowOffset: { width: 10, height: 10 },
+              shadowOpacity: 0.5,
+              shadowRadius: 0,
+            }}
+            onPress={() => safeNavigate("/settings")}
+          >
+            <View
               style={{
-                transform: [{ skewX: `-${themeConfig.styles.skew}` }],
-                fontFamily: themeConfig.styles.fontFamily,
+                transform: [
+                  { skewX: currentTheme === "P5" ? "12deg" : "0deg" },
+                ],
               }}
             >
-              {t("home.submit_btn")}
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+              <StickerText
+                text="VELVET"
+                themeConfig={themeConfig}
+                fontSize={16}
+              />
+              <StickerText
+                text="ROOM"
+                themeConfig={themeConfig}
+                fontSize={14}
+              />
+            </View>
+          </TouchableOpacity>
 
-      {/* 3. 底部操作栏 */}
-      <View className="flex-row justify-between mt-8 mb-10">
-        <TouchableOpacity
-          className="py-3 px-6 rounded"
-          style={{ backgroundColor: "#333", transform: [{ skewY: "1deg" }] }}
-          onPress={() => router.push("/history")}
-        >
-          <Text className="text-white font-bold">{t("home.calendar_btn")}</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              padding: 16,
+              borderRadius: 8,
+              borderWidth: 2,
+              backgroundColor: "#444",
+              borderColor: themeConfig.colors.text,
+              width: 90,
+              height: 60,
+              transform: [{ rotate: "10deg" }, { translateY: -10 }],
+            }}
+            onPress={handleExport}
+          >
+            <StickerText
+              text="EXPORT"
+              themeConfig={themeConfig}
+              fontSize={10}
+            />
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          className="py-3 px-6 rounded"
-          style={{
-            backgroundColor: "#004B8D",
-            transform: [{ skewY: "-1deg" }],
-          }}
-          onPress={() => router.push("/settings")}
-        >
-          <Text className="text-white font-bold">{t("home.settings_btn")}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="py-3 px-6 rounded"
-          style={{ backgroundColor: "#444" }}
-          onPress={handleExport}
-        >
-          <Text className="text-white font-bold">{t("home.export_btn")}</Text>
-        </TouchableOpacity>
-      </View>
-
-      <PersonaModal
-        visible={modalVisible}
-        title={modalContent.title}
-        message={modalContent.message}
-        onClose={() => setModalVisible(false)}
-        themeConfig={themeConfig}
-      />
-    </ScrollView>
+        <PersonaModal
+          visible={modalVisible}
+          title={modalContent.title}
+          message={modalContent.message}
+          onClose={() => setModalVisible(false)}
+          themeConfig={themeConfig}
+        />
+      </ScrollView>
+    </PersonaBackground>
   );
 }
