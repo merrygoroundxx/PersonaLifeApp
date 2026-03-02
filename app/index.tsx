@@ -16,6 +16,7 @@ import {
 } from "react-native";
 
 import AnimatedNumber from "../components/AnimatedNumber";
+import PersonaModal from "../components/PersonaModal";
 import StatRadarChart from "../components/StatRadarChart";
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 import { analyzeActivityWithAI } from "../utils/aiModel";
@@ -33,6 +34,10 @@ export default function HomeScreen() {
   const [feeling, setFeeling] = useState("");
   const [loading, setLoading] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<PersonaTheme>("P5");
+
+  // Modal State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: "", message: "" });
 
   // 数据状态
   const [totalStats, setTotalStats] = useState<PersonaStats>({
@@ -132,9 +137,14 @@ export default function HomeScreen() {
       Object.entries(gainedStats).forEach(([k, v]) => {
         if (v > 0) msg += `${t(`stats.${k}`).toUpperCase()} +${v} ♪\n`;
       });
-      Alert.alert(t("home.rank_up"), msg);
+      setModalContent({ title: t("home.rank_up"), message: msg });
+      setModalVisible(true);
     } catch (error) {
-      Alert.alert("Error", "The velvet room is closed currently.");
+      setModalContent({
+        title: "Error",
+        message: "The velvet room is closed currently.",
+      });
+      setModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -143,10 +153,11 @@ export default function HomeScreen() {
   // 导出数据
   const handleExport = async () => {
     if (Platform.OS === "web") {
-      Alert.alert(
-        "Notice",
-        "File export is only available on Android/iOS in this demo.",
-      );
+      setModalContent({
+        title: "Notice",
+        message: "File export is only available on Android/iOS in this demo.",
+      });
+      setModalVisible(true);
       return;
     }
 
@@ -315,6 +326,14 @@ export default function HomeScreen() {
           <Text className="text-white font-bold">{t("home.export_btn")}</Text>
         </TouchableOpacity>
       </View>
+
+      <PersonaModal
+        visible={modalVisible}
+        title={modalContent.title}
+        message={modalContent.message}
+        onClose={() => setModalVisible(false)}
+        themeConfig={themeConfig}
+      />
     </ScrollView>
   );
 }
