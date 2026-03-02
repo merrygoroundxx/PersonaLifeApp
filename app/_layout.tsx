@@ -18,6 +18,10 @@ export default function RootLayout() {
           name="history"
           options={{ title: "Memories (记忆)", presentation: "modal" }}
         />
+        <Stack.Screen
+          name="settings"
+          options={{ title: "Velvet Room (设置)", presentation: "modal" }}
+        />
       </Stack>
     </SafeAreaProvider>
   );
