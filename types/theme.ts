@@ -22,7 +22,7 @@ export interface ThemeConfig {
     borderWidth: number;
     textureType: "noise" | "rainbow" | "glass";
     containerType: "jagged" | "rounded-retro" | "glass-cut";
-    shadowOffset: { x: number; y: number };
+    shadowOffset: { width: number; height: number };
   };
 }
 
@@ -47,7 +47,7 @@ export const THEME_CONFIGS: Record<PersonaTheme, ThemeConfig> = {
       borderWidth: 1,
       textureType: "glass",
       containerType: "glass-cut",
-      shadowOffset: { x: 0, y: 0 },
+      shadowOffset: { width: 0, height: 0 },
     },
   },
   P4: {
@@ -69,7 +69,7 @@ export const THEME_CONFIGS: Record<PersonaTheme, ThemeConfig> = {
       borderWidth: 4,
       textureType: "rainbow",
       containerType: "rounded-retro",
-      shadowOffset: { x: 5, y: 5 },
+      shadowOffset: { width: 5, height: 5 },
     },
   },
   P5: {
@@ -91,7 +91,7 @@ export const THEME_CONFIGS: Record<PersonaTheme, ThemeConfig> = {
       borderWidth: 3,
       textureType: "noise",
       containerType: "jagged",
-      shadowOffset: { x: 8, y: 8 },
+      shadowOffset: { width: 8, height: 8 },
     },
   },
 };

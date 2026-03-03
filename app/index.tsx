@@ -28,6 +28,7 @@ import {
 } from "../services/statsManager";
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 import { analyzeActivityWithAI } from "../utils/aiModel";
+import { heightPercent, scaleFont, scaleSize } from "../utils/layout";
 import {
   ActivityRecord,
   PersonaStatsPoints,
@@ -312,22 +313,22 @@ export default function HomeScreen() {
     <PersonaBackground themeConfig={themeConfig}>
       <ScrollView style={{ flex: 1, padding: 16 }}>
         {/* 1. 五维展示区 (动态雷达图) */}
-        <View style={{ marginBottom: 48, alignItems: "center" }}>
+        <View style={{ marginBottom: scaleSize(48), alignItems: "center" }}>
           <PersonaContainer
             themeConfig={themeConfig}
-            style={{ width: "100%", marginBottom: 20 }}
+            style={{ width: "100%", marginBottom: scaleSize(20) }}
           >
             <StickerText
               text={t("stats.title").toUpperCase()}
               themeConfig={themeConfig}
-              fontSize={24}
+              fontSize={scaleFont(24)}
             />
           </PersonaContainer>
 
           <StatRadarChart
             stats={totalStats}
             themeConfig={themeConfig}
-            size={320}
+            size={scaleSize(320)}
           />
 
           {/* 详细数值显示 - 气泡/玻璃风格 */}
@@ -336,16 +337,19 @@ export default function HomeScreen() {
               flexDirection: "row",
               flexWrap: "wrap",
               justifyContent: "center",
-              marginTop: 32,
+              marginTop: scaleSize(32),
             }}
           >
             {themeConfig.stats.map((stat) => (
-              <View key={stat} style={{ alignItems: "center", margin: 12 }}>
+              <View
+                key={stat}
+                style={{ alignItems: "center", margin: scaleSize(12) }}
+              >
                 <View
                   style={{
                     backgroundColor: themeConfig.colors.primary,
-                    paddingHorizontal: 12,
-                    paddingVertical: 4,
+                    paddingHorizontal: scaleSize(12),
+                    paddingVertical: scaleSize(4),
                     borderRadius: themeConfig.styles.borderRadius || 10,
                     transform: [
                       { skewX: themeConfig.styles.skew },
@@ -356,15 +360,15 @@ export default function HomeScreen() {
                   <StickerText
                     text={t(`stats.${stat}`).toUpperCase()}
                     themeConfig={themeConfig}
-                    fontSize={10}
+                    fontSize={scaleFont(10)}
                   />
                 </View>
                 <View style={{ alignItems: "center" }}>
                   <AnimatedNumber
                     value={totalStats[stat].value}
                     style={{
-                      marginTop: 8,
-                      fontSize: 24,
+                      marginTop: scaleSize(8),
+                      fontSize: scaleFont(24),
                       fontWeight: "900",
                       color: themeConfig.colors.primary,
                       textShadowColor: themeConfig.colors.shadow,
@@ -372,17 +376,19 @@ export default function HomeScreen() {
                       textShadowRadius: 1,
                     }}
                   />
-                  <View style={{ flexDirection: "row", marginTop: 4 }}>
+                  <View
+                    style={{ flexDirection: "row", marginTop: scaleSize(4) }}
+                  >
                     <StickerText
                       text={`R${totalStats[stat].rank}`}
                       themeConfig={themeConfig}
-                      fontSize={10}
+                      fontSize={scaleFont(10)}
                     />
                     {totalStats[stat].isMaxed && (
                       <StickerText
                         text={"MAX"}
                         themeConfig={themeConfig}
-                        fontSize={10}
+                        fontSize={scaleFont(10)}
                         textColor={
                           currentTheme === "P5"
                             ? "#FF0000"
@@ -390,7 +396,7 @@ export default function HomeScreen() {
                               ? "#00AEEF"
                               : themeConfig.colors.accent
                         }
-                        style={{ marginLeft: 6 }}
+                        style={{ marginLeft: scaleSize(6) }}
                       />
                     )}
                   </View>
@@ -403,27 +409,34 @@ export default function HomeScreen() {
         {/* 2. 输入区域 */}
         <PersonaContainer
           themeConfig={themeConfig}
-          style={{ marginBottom: 40 }}
+          style={{ marginBottom: scaleSize(40) }}
         >
           <StickerText
             text={t("home.today_activity")}
             themeConfig={themeConfig}
-            fontSize={16}
-            style={{ marginBottom: 10 }}
+            fontSize={scaleFont(16)}
+            style={{ marginBottom: scaleSize(10) }}
           />
           <TextInput
             placeholder={t("home.activity_placeholder")}
+            placeholderTextColor={currentTheme === "P3" ? "#aaa" : "#666"}
             value={activityName}
             onChangeText={setActivityName}
             style={{
-              backgroundColor: "rgba(255,255,255,0.9)",
-              padding: 16,
-              marginBottom: 24,
-              borderRadius: 8,
-              color: "#000",
+              backgroundColor:
+                currentTheme === "P5"
+                  ? "#fff"
+                  : currentTheme === "P4"
+                    ? "#FFE599"
+                    : "rgba(0, 20, 40, 0.6)",
+              padding: scaleSize(16),
+              marginBottom: scaleSize(24),
+              borderRadius: themeConfig.styles.borderRadius || 8,
+              color: currentTheme === "P3" ? "#fff" : "#000",
               fontWeight: "700",
-              transform: [{ rotate: "-1deg" }],
-              borderWidth: 2,
+              fontSize: scaleFont(16),
+              transform: [{ rotate: currentTheme === "P5" ? "-1deg" : "0deg" }],
+              borderWidth: scaleSize(2),
               borderColor: themeConfig.colors.secondary,
             }}
           />
@@ -431,36 +444,49 @@ export default function HomeScreen() {
           <StickerText
             text={t("home.feeling_label")}
             themeConfig={themeConfig}
-            fontSize={16}
-            style={{ marginBottom: 10 }}
+            fontSize={scaleFont(16)}
+            style={{ marginBottom: scaleSize(10) }}
           />
           <TextInput
             placeholder={t("home.feeling_placeholder")}
+            placeholderTextColor={currentTheme === "P3" ? "#aaa" : "#666"}
             multiline
             textAlignVertical="top"
             value={feeling}
             onChangeText={setFeeling}
             style={{
-              backgroundColor: "rgba(255,255,255,0.9)",
-              padding: 16,
-              marginBottom: 32,
-              borderRadius: 8,
-              color: "#000",
+              backgroundColor:
+                currentTheme === "P5"
+                  ? "#fff"
+                  : currentTheme === "P4"
+                    ? "#FFE599"
+                    : "rgba(0, 20, 40, 0.6)",
+              padding: scaleSize(16),
+              marginBottom: scaleSize(32),
+              borderRadius: themeConfig.styles.borderRadius || 8,
+              color: currentTheme === "P3" ? "#fff" : "#000",
               fontWeight: "700",
-              height: 96,
-              transform: [{ rotate: "1deg" }],
-              borderWidth: 2,
+              fontSize: scaleFont(16),
+              height: heightPercent(12),
+              transform: [{ rotate: currentTheme === "P5" ? "1deg" : "0deg" }],
+              borderWidth: scaleSize(2),
               borderColor: themeConfig.colors.secondary,
             }}
           />
 
           <TouchableOpacity
+            activeOpacity={0.7}
             style={{
-              padding: 20,
+              padding: scaleSize(20),
               backgroundColor: loading ? "#666" : themeConfig.colors.primary,
               transform: [{ skewX: themeConfig.styles.skew }, { scale: 1.05 }],
-              borderWidth: 2,
+              borderWidth: scaleSize(2),
               borderColor: themeConfig.colors.accent,
+              shadowColor: themeConfig.colors.shadow,
+              shadowOffset: themeConfig.styles.shadowOffset,
+              shadowOpacity: 0.8,
+              shadowRadius: 0,
+              elevation: 5,
             }}
             onPress={handleSubmit}
             disabled={loading}
@@ -471,7 +497,7 @@ export default function HomeScreen() {
               <StickerText
                 text={t("home.submit_btn")}
                 themeConfig={themeConfig}
-                fontSize={20}
+                fontSize={scaleFont(20)}
               />
             )}
           </TouchableOpacity>
@@ -483,45 +509,52 @@ export default function HomeScreen() {
             flexDirection: "row",
             alignItems: "flex-end",
             justifyContent: "space-around",
-            marginBottom: 80,
-            height: 128,
+            marginBottom: scaleSize(80),
+            height: scaleSize(128),
           }}
         >
           <TouchableOpacity
+            activeOpacity={0.7}
             style={{
-              padding: 16,
-              borderRadius: 40,
-              borderWidth: 2,
+              padding: scaleSize(16),
+              borderRadius: scaleSize(40),
+              borderWidth: scaleSize(2),
               backgroundColor: themeConfig.colors.secondary,
               borderColor: themeConfig.colors.primary,
-              width: 80,
-              height: 80,
+              width: scaleSize(80),
+              height: scaleSize(80),
               transform: [{ rotate: "-15deg" }, { translateY: 10 }],
             }}
             onPress={() => safeNavigate("/history")}
           >
-            <StickerText text="CAL" themeConfig={themeConfig} fontSize={12} />
+            <StickerText
+              text="CAL"
+              themeConfig={themeConfig}
+              fontSize={scaleFont(12)}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
+            activeOpacity={0.7}
             style={{
               alignItems: "center",
               justifyContent: "center",
-              borderWidth: 4,
+              borderWidth: scaleSize(4),
               backgroundColor: themeConfig.colors.primary,
               borderColor: themeConfig.colors.accent,
-              width: 120,
-              height: 120,
-              borderRadius: currentTheme === "P5" ? 0 : 60,
+              width: scaleSize(120),
+              height: scaleSize(120),
+              borderRadius: currentTheme === "P5" ? 0 : scaleSize(60),
               transform: [
                 { rotate: "5deg" },
                 { skewX: themeConfig.styles.skew },
                 { scale: 1.1 },
               ],
               shadowColor: themeConfig.colors.shadow,
-              shadowOffset: { width: 10, height: 10 },
+              shadowOffset: { width: scaleSize(10), height: scaleSize(10) },
               shadowOpacity: 0.5,
               shadowRadius: 0,
+              elevation: 10,
             }}
             onPress={() => safeNavigate("/settings")}
           >
@@ -535,25 +568,26 @@ export default function HomeScreen() {
               <StickerText
                 text="VELVET"
                 themeConfig={themeConfig}
-                fontSize={16}
+                fontSize={scaleFont(16)}
               />
               <StickerText
                 text="ROOM"
                 themeConfig={themeConfig}
-                fontSize={14}
+                fontSize={scaleFont(14)}
               />
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity
+            activeOpacity={0.7}
             style={{
-              padding: 16,
-              borderRadius: 8,
-              borderWidth: 2,
+              padding: scaleSize(16),
+              borderRadius: scaleSize(8),
+              borderWidth: scaleSize(2),
               backgroundColor: "#444",
               borderColor: themeConfig.colors.text,
-              width: 90,
-              height: 60,
+              width: scaleSize(90),
+              height: scaleSize(60),
               transform: [{ rotate: "10deg" }, { translateY: -10 }],
             }}
             onPress={handleExport}
@@ -561,18 +595,19 @@ export default function HomeScreen() {
             <StickerText
               text="EXPORT"
               themeConfig={themeConfig}
-              fontSize={10}
+              fontSize={scaleFont(10)}
             />
           </TouchableOpacity>
           <TouchableOpacity
+            activeOpacity={0.7}
             style={{
-              padding: 16,
-              borderRadius: 8,
-              borderWidth: 2,
+              padding: scaleSize(16),
+              borderRadius: scaleSize(8),
+              borderWidth: scaleSize(2),
               backgroundColor: "#333",
               borderColor: themeConfig.colors.text,
-              width: 90,
-              height: 60,
+              width: scaleSize(90),
+              height: scaleSize(60),
               transform: [{ rotate: "-8deg" }, { translateY: -6 }],
             }}
             onPress={handleImport}
@@ -580,7 +615,7 @@ export default function HomeScreen() {
             <StickerText
               text="IMPORT"
               themeConfig={themeConfig}
-              fontSize={10}
+              fontSize={scaleFont(10)}
             />
           </TouchableOpacity>
         </View>

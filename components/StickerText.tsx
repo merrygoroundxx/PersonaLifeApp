@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, ViewProps } from "react-native";
 import { ThemeConfig } from "../types/theme";
+import { scaleSize } from "../utils/layout";
 
 interface StickerTextProps extends ViewProps {
   text: string;
@@ -42,22 +43,22 @@ const StickerText: React.FC<StickerTextProps> = ({
       {text.split("").map((char, i) => {
         const rotation = (Math.random() - 0.5) * 15;
         const scale = 0.9 + Math.random() * 0.2;
-        const translateY = (Math.random() - 0.5) * 5;
+        const translateY = (Math.random() - 0.5) * scaleSize(5);
 
         return (
           <View
             key={i}
             style={{
               backgroundColor: i % 2 === 0 ? colors.accent : colors.primary,
-              paddingHorizontal: 4,
-              marginHorizontal: 1,
-              marginBottom: 4,
+              paddingHorizontal: scaleSize(4),
+              marginHorizontal: Math.max(1, scaleSize(1)),
+              marginBottom: scaleSize(4),
               transform: [
                 { rotate: `${rotation}deg` },
                 { scale },
                 { translateY },
               ],
-              borderWidth: 1,
+              borderWidth: Math.max(1, scaleSize(1)),
               borderColor: colors.secondary,
             }}
           >

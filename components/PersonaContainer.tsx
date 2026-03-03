@@ -82,6 +82,17 @@ const PersonaContainer: React.FC<PersonaContainerProps> = ({
   };
 
   const [layout, setLayout] = React.useState({ width: 0, height: 0 });
+  const invertSkew = (skew: string) => {
+    const m = skew.match(/^(-?\d+(?:\.\d+)?)deg$/);
+    if (m) {
+      const v = parseFloat(m[1]);
+      return `${-v}deg`;
+    }
+    if (skew.startsWith("-")) {
+      return skew.substring(1);
+    }
+    return `-${skew}`;
+  };
 
   return (
     <View
@@ -106,9 +117,7 @@ const PersonaContainer: React.FC<PersonaContainerProps> = ({
         style={{
           transform: [
             {
-              skewX: styles.skew.startsWith("-")
-                ? styles.skew.substring(1)
-                : `-${styles.skew}`,
+              skewX: invertSkew(styles.skew),
             },
           ],
         }}

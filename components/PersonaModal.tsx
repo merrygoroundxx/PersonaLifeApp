@@ -17,6 +17,17 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
   onClose,
   themeConfig,
 }) => {
+  const invertSkew = (skew: string) => {
+    const m = skew.match(/^(-?\d+(?:\.\d+)?)deg$/);
+    if (m) {
+      const v = parseFloat(m[1]);
+      return `${-v}deg`;
+    }
+    if (skew.startsWith("-")) {
+      return skew.substring(1);
+    }
+    return `-${skew}`;
+  };
   return (
     <Modal
       transparent
@@ -61,7 +72,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
                 fontStyle: "italic",
                 color: themeConfig.colors.accent,
                 fontFamily: themeConfig.styles.fontFamily,
-                transform: [{ skewX: `-${themeConfig.styles.skew}` }],
+                transform: [{ skewX: invertSkew(themeConfig.styles.skew) }],
               }}
             >
               {title.toUpperCase()}
@@ -77,7 +88,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
                 fontSize: 16,
                 lineHeight: 24,
                 color: themeConfig.colors.text,
-                transform: [{ skewX: `-${themeConfig.styles.skew}` }],
+                transform: [{ skewX: invertSkew(themeConfig.styles.skew) }],
               }}
             >
               {message}
@@ -102,7 +113,7 @@ const PersonaModal: React.FC<PersonaModalProps> = ({
                 fontStyle: "italic",
                 letterSpacing: 2,
                 color: themeConfig.colors.primary,
-                transform: [{ skewX: `-${themeConfig.styles.skew}` }],
+                transform: [{ skewX: invertSkew(themeConfig.styles.skew) }],
               }}
             >
               {Platform.OS === "web" ? "OK" : "I UNDERSTAND"}

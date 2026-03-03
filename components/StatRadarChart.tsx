@@ -17,6 +17,7 @@ import Svg, {
     Text as SvgText,
 } from "react-native-svg";
 import { ThemeConfig } from "../types/theme";
+import { scaleFont, scaleSize } from "../utils/layout";
 import { PersonaStatsState, StatType } from "../utils/types";
 
 const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
@@ -88,8 +89,8 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
             points={jaggedPoints}
             fill={colors.secondary}
             stroke={colors.primary}
-            strokeWidth={4}
-            strokeDasharray="10,5"
+            strokeWidth={scaleSize(4)}
+            strokeDasharray={`${scaleSize(10)},${scaleSize(5)}`}
           />
         );
       case "rounded-retro": // P4
@@ -100,7 +101,7 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
             r={radius}
             fill={colors.secondary}
             stroke={colors.accent}
-            strokeWidth={10}
+            strokeWidth={scaleSize(10)}
             strokeOpacity={0.2}
           />
         );
@@ -144,7 +145,7 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
                 y2={y2}
                 stroke={colors.accent}
                 strokeOpacity={0.2}
-                strokeWidth={1}
+                strokeWidth={scaleSize(1)}
               />
             );
           })}
@@ -155,13 +156,13 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
             fill={colors.primary}
             fillOpacity={styles.containerType === "glass-cut" ? 0.4 : 0.8}
             stroke={colors.accent}
-            strokeWidth={2}
+            strokeWidth={scaleSize(2)}
           />
 
           {/* Labels */}
           {activeStats.map((stat, i) => {
             const angle = i * angleStep - Math.PI / 2;
-            const labelRadius = radius + 35;
+            const labelRadius = radius + scaleSize(35);
             const x = center + labelRadius * Math.cos(angle);
             const y = center + labelRadius * Math.sin(angle);
 
@@ -171,7 +172,11 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
                 x={x}
                 y={y}
                 fill={colors.text}
-                fontSize={styles.containerType === "jagged" ? 14 : 12}
+                fontSize={
+                  styles.containerType === "jagged"
+                    ? scaleFont(14)
+                    : scaleFont(12)
+                }
                 fontWeight="900"
                 textAnchor="middle"
                 alignmentBaseline="middle"
