@@ -5,13 +5,13 @@ import * as Sharing from "expo-sharing";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-    ActivityIndicator,
+  ActivityIndicator,
   Alert,
-    Platform,
-    ScrollView,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Platform,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import AnimatedNumber from "../components/AnimatedNumber";
@@ -22,16 +22,16 @@ import PersonaModal from "../components/PersonaModal";
 import StatRadarChart from "../components/StatRadarChart";
 import StickerText from "../components/StickerText";
 import {
-    calculateNewStats,
-    initializeEmptyStats,
-    RankUpEvent,
+  calculateNewStats,
+  initializeEmptyStats,
+  RankUpEvent,
 } from "../services/statsManager";
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 import { analyzeActivityWithAI } from "../utils/aiModel";
 import {
-    ActivityRecord,
-    PersonaStatsPoints,
-    PersonaStatsState,
+  ActivityRecord,
+  PersonaStatsPoints,
+  PersonaStatsState,
 } from "../utils/types";
 
 const STORAGE_KEY = "@persona_activities";
@@ -164,11 +164,32 @@ export default function HomeScreen() {
   // 导出数据
   const handleExport = async () => {
     if (Platform.OS === "web") {
-      setModalContent({
-        title: "Notice",
-        message: "File export is only available on Android/iOS in this demo.",
-      });
-      setModalVisible(true);
+      try {
+        const jsonValue = (await AsyncStorage.getItem(STORAGE_KEY)) ?? "[]";
+        const blob = new Blob([jsonValue], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `persona_life_data_${new Date()
+          .toISOString()
+          .slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setModalContent({
+          title: "OK",
+          message: "Download started.",
+        });
+        setModalVisible(true);
+      } catch (e) {
+        console.error("Web export failed", e);
+        setModalContent({
+          title: "Error",
+          message: "Failed to export data on web.",
+        });
+        setModalVisible(true);
+      }
       return;
     }
 
@@ -187,6 +208,103 @@ export default function HomeScreen() {
 
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(file.uri);
+    }
+  };
+
+  const handleImport = async () => {
+    if (Platform.OS === "web") {
+      try {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json";
+        input.onchange = async () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          const text = await file.text();
+          const data = JSON.parse(text);
+          if (!Array.isArray(data)) {
+            throw new Error("Invalid data format");
+          }
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          recalculateStats(data);
+          setModalContent({
+            title: "OK",
+            message: "Data restored.",
+          });
+          setModalVisible(true);
+        };
+        input.click();
+      } catch (e) {
+        console.error("Web import failed", e);
+        setModalContent({
+          title: "Error",
+          message: "Failed to import data on web.",
+        });
+        setModalVisible(true);
+      }
+      return;
+    }
+
+    try {
+      let text: string | null = null;
+      const metroRequire = (global as any)?.require?.bind(global);
+      if (metroRequire) {
+        try {
+          const DocumentPicker = metroRequire("expo-document-picker");
+          if (DocumentPicker?.getDocumentAsync) {
+            const result = await DocumentPicker.getDocumentAsync({
+              type: "application/json",
+              copyToCacheDirectory: true,
+            });
+            let uri: string | undefined;
+            if (result?.assets && result.assets[0]?.uri) {
+              uri = result.assets[0].uri;
+            } else if (result?.type === "success" && result?.file?.uri) {
+              uri = result.file.uri;
+            } else if (result?.type === "success" && result?.uri) {
+              uri = result.uri;
+            }
+            if (!uri) {
+              throw new Error("No file selected");
+            }
+            let srcFile: any;
+            if ((File as any)?.fromUri) {
+              srcFile = (File as any).fromUri(uri);
+            } else {
+              srcFile = new (File as any)(uri);
+            }
+            text = await srcFile.text();
+          } else {
+            const file = new File(Paths.document, "persona_life_data.json");
+            text = await file.text();
+          }
+        } catch {
+          const file = new File(Paths.document, "persona_life_data.json");
+          text = await file.text();
+        }
+      } else {
+        const file = new File(Paths.document, "persona_life_data.json");
+        text = await file.text();
+      }
+      const data = JSON.parse(text || "[]");
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid data format");
+      }
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      recalculateStats(data);
+      setModalContent({
+        title: "OK",
+        message: "Data restored from Documents.",
+      });
+      setModalVisible(true);
+    } catch (e) {
+      console.error("Native import failed", e);
+      setModalContent({
+        title: "Error",
+        message:
+          "Failed to import. Place JSON at Documents/persona_life_data.json and retry.",
+      });
+      setModalVisible(true);
     }
   };
 
@@ -269,8 +387,8 @@ export default function HomeScreen() {
                           currentTheme === "P5"
                             ? "#FF0000"
                             : currentTheme === "P3"
-                            ? "#00AEEF"
-                            : themeConfig.colors.accent
+                              ? "#00AEEF"
+                              : themeConfig.colors.accent
                         }
                         style={{ marginLeft: 6 }}
                       />
@@ -442,6 +560,25 @@ export default function HomeScreen() {
           >
             <StickerText
               text="EXPORT"
+              themeConfig={themeConfig}
+              fontSize={10}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              padding: 16,
+              borderRadius: 8,
+              borderWidth: 2,
+              backgroundColor: "#333",
+              borderColor: themeConfig.colors.text,
+              width: 90,
+              height: 60,
+              transform: [{ rotate: "-8deg" }, { translateY: -6 }],
+            }}
+            onPress={handleImport}
+          >
+            <StickerText
+              text="IMPORT"
               themeConfig={themeConfig}
               fontSize={10}
             />
