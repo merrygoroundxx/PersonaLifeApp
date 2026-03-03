@@ -48,7 +48,7 @@ export default function SettingsScreen() {
         message: t("settings.save_success"),
       });
       setModalVisible(true);
-    } catch (e) {
+    } catch {
       setModalContent({
         title: "Error",
         message: t("settings.save_error"),
@@ -76,13 +76,12 @@ export default function SettingsScreen() {
             text={t("settings.title").toUpperCase()}
             themeConfig={themeConfig}
             fontSize={24}
-            style={{ textAlign: "center" }}
           />
           <StickerText
             text={t("settings.contract_signed")}
             themeConfig={themeConfig}
             fontSize={10}
-            style={{ textAlign: "center", marginTop: 5, opacity: 0.7 }}
+            style={{ marginTop: 5, opacity: 0.7 }}
           />
         </PersonaContainer>
 
@@ -238,7 +237,6 @@ export default function SettingsScreen() {
               text={t("settings.save_btn")}
               themeConfig={themeConfig}
               fontSize={20}
-              style={{ textAlign: "center" }}
             />
           </TouchableOpacity>
         </PersonaContainer>
@@ -247,7 +245,7 @@ export default function SettingsScreen() {
           text={t("settings.iamthou")}
           themeConfig={themeConfig}
           fontSize={12}
-          style={{ textAlign: "center", marginBottom: 40, opacity: 0.5 }}
+          style={{ marginBottom: 40, opacity: 0.5 }}
         />
 
         <PersonaModal

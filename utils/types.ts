@@ -7,15 +7,20 @@ export type StatType =
   | "expression"
   | "diligence";
 
-export interface PersonaStats {
-  knowledge: number; // 知识
-  courage: number; // 勇气
-  charm: number; // 魅力
-  kindness: number; // 宽容/体贴
-  dexterity: number; // 灵巧
-  expression: number; // 表达
-  diligence: number; // 毅力
+export interface StatEntry {
+  value: number;
+  rank: number; // 1-5
+  isMaxed: boolean;
+  overflowPoints: number;
 }
+
+export type PersonaStatsState = {
+  [K in StatType]: StatEntry;
+};
+
+export type PersonaStatsPoints = {
+  [K in StatType]: number;
+};
 
 export interface ActivityRecord {
   id: string;
@@ -23,5 +28,5 @@ export interface ActivityRecord {
   timestamp: number;
   activityName: string;
   feeling: string;
-  gainedStats: PersonaStats;
+  gainedPoints: PersonaStatsPoints;
 }

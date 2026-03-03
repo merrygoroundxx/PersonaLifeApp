@@ -41,5 +41,120 @@
   },
   "ai": {
     "system_prompt": "You are a Persona game stat analyzer. Analyze the user's activity and feeling, then assign points (0-3) to each of the 7 core dimensions.\nDimensions: [knowledge, courage, charm, kindness, dexterity, expression, diligence].\nReturn ONLY a JSON object with these keys and their integer values.\nExample: {\"knowledge\": 2, \"courage\": 0, \"charm\": 0, \"kindness\": 1, \"dexterity\": 0, \"expression\": 0, \"diligence\": 0}"
+  },
+  "titles": {
+    "p3": {
+      "knowledge": {
+        "1": "Slacker",
+        "2": "Average",
+        "3": "Above Average",
+        "4": "Smart",
+        "5": "Intelligent"
+      },
+      "courage": {
+        "1": "Timid",
+        "2": "Ordinary",
+        "3": "Determined",
+        "4": "Tough",
+        "5": "Fearless"
+      },
+      "charm": {
+        "1": "Plain",
+        "2": "Unpolished",
+        "3": "Confident",
+        "4": "Smooth",
+        "5": "Popular"
+      }
+    },
+    "p4": {
+      "knowledge": {
+        "1": "Aware",
+        "2": "Informed",
+        "3": "Expert",
+        "4": "Professor",
+        "5": "Sage"
+      },
+      "courage": {
+        "1": "Average",
+        "2": "Reliable",
+        "3": "Brave",
+        "4": "Daring",
+        "5": "Heroic"
+      },
+      "expression": {
+        "1": "Rough",
+        "2": "Eloquent",
+        "3": "Persuasive",
+        "4": "Touching",
+        "5": "Enthralling"
+      },
+      "diligence": {
+        "1": "Callow",
+        "2": "Persistent",
+        "3": "Strong",
+        "4": "Thorough",
+        "5": "Rock Solid"
+      },
+      "kindness": {
+        "1": "Basic",
+        "2": "Kindly",
+        "3": "Generous",
+        "4": "Motherly",
+        "5": "Saintly"
+      }
+    },
+    "p5": {
+      "knowledge": {
+        "1": "Oblivious",
+        "2": "Learned",
+        "3": "Scholarly",
+        "4": "Encyclopedic",
+        "5": "Erudite"
+      },
+      "guts": {
+        "1": "Milquetoast",
+        "2": "Bold",
+        "3": "Staunch",
+        "4": "Dauntless",
+        "5": "Lionhearted"
+      },
+      "proficiency": {
+        "1": "Bumbling",
+        "2": "Decent",
+        "3": "Skilled",
+        "4": "Masterful",
+        "5": "Transcendent"
+      },
+      "kindness": {
+        "1": "Inoffensive",
+        "2": "Considerate",
+        "3": "Empathetic",
+        "4": "Selfless",
+        "5": "Angelic"
+      },
+      "charm": {
+        "1": "Existent",
+        "2": "Head-turning",
+        "3": "Suave",
+        "4": "Charismatic",
+        "5": "Debonair"
+      }
+    },
+    "generic": {
+      "expression": {
+        "1": "Awkward",
+        "2": "Conversant",
+        "3": "Eloquent",
+        "4": "Persuasive",
+        "5": "Silver-tongued"
+      },
+      "diligence": {
+        "1": "Laid-back",
+        "2": "Hard-working",
+        "3": "Dedicated",
+        "4": "Industrious",
+        "5": "Unstoppable"
+      }
+    }
   }
 }

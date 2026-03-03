@@ -1,11 +1,12 @@
 import React from "react";
-import { View, Text, ViewProps, StyleSheet } from "react-native";
+import { View, Text, ViewProps } from "react-native";
 import { ThemeConfig } from "../types/theme";
 
 interface StickerTextProps extends ViewProps {
   text: string;
   themeConfig: ThemeConfig;
   fontSize?: number;
+  textColor?: string;
 }
 
 const StickerText: React.FC<StickerTextProps> = ({
@@ -13,6 +14,7 @@ const StickerText: React.FC<StickerTextProps> = ({
   themeConfig,
   fontSize = 24,
   style,
+  textColor,
 }) => {
   const { styles, colors } = themeConfig;
 
@@ -21,7 +23,7 @@ const StickerText: React.FC<StickerTextProps> = ({
       <Text
         style={[
           {
-            color: colors.accent,
+            color: textColor ?? colors.accent,
             fontFamily: styles.fontFamily,
             fontSize,
             fontWeight: "900",
@@ -61,7 +63,7 @@ const StickerText: React.FC<StickerTextProps> = ({
           >
             <Text
               style={{
-                color: i % 2 === 0 ? colors.secondary : colors.accent,
+                color: textColor ?? (i % 2 === 0 ? colors.secondary : colors.accent),
                 fontFamily: styles.fontFamily,
                 fontSize,
                 fontWeight: "900",

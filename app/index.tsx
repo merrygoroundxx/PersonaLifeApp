@@ -5,23 +5,34 @@ import * as Sharing from "expo-sharing";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+  Alert,
+    Platform,
+    ScrollView,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import AnimatedNumber from "../components/AnimatedNumber";
+import LevelUpModal from "../components/LevelUpModal";
 import PersonaBackground from "../components/PersonaBackground";
 import PersonaContainer from "../components/PersonaContainer";
 import PersonaModal from "../components/PersonaModal";
 import StatRadarChart from "../components/StatRadarChart";
 import StickerText from "../components/StickerText";
+import {
+    calculateNewStats,
+    initializeEmptyStats,
+    RankUpEvent,
+} from "../services/statsManager";
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 import { analyzeActivityWithAI } from "../utils/aiModel";
-import { ActivityRecord, PersonaStats } from "../utils/types";
+import {
+    ActivityRecord,
+    PersonaStatsPoints,
+    PersonaStatsState,
+} from "../utils/types";
 
 const STORAGE_KEY = "@persona_activities";
 const THEME_STORAGE_KEY = "@persona_current_theme";
@@ -41,27 +52,35 @@ export default function HomeScreen() {
   const [modalContent, setModalContent] = useState({ title: "", message: "" });
 
   // 数据状态
-  const [totalStats, setTotalStats] = useState<PersonaStats>({
-    knowledge: 0,
-    courage: 0,
-    charm: 0,
-    kindness: 0,
-    dexterity: 0,
-    expression: 0,
-    diligence: 0,
-  });
+  const [totalStats, setTotalStats] = useState<PersonaStatsState>(
+    initializeEmptyStats(),
+  );
+  const [levelUpEvents, setLevelUpEvents] = useState<RankUpEvent[]>([]);
+
+  const loadTheme = useCallback(async () => {
+    const theme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+    if (theme) setCurrentTheme(theme as PersonaTheme);
+  }, []);
+
+  const loadData = useCallback(async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+      const data: ActivityRecord[] =
+        jsonValue != null ? JSON.parse(jsonValue) : [];
+      recalculateStats(data);
+    } catch (e) {
+      console.error("Failed to load data", e);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      loadData();
-      loadTheme();
-    }, []),
+      const loadInitial = async () => {
+        await Promise.all([loadData(), loadTheme()]);
+      };
+      loadInitial();
+    }, [loadData, loadTheme]),
   );
-
-  const loadTheme = async () => {
-    const theme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-    if (theme) setCurrentTheme(theme as PersonaTheme);
-  };
 
   const themeConfig = THEME_CONFIGS[currentTheme];
 
@@ -72,38 +91,18 @@ export default function HomeScreen() {
     router.push(path);
   };
 
-  // 加载本地数据并计算总分
-  const loadData = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
-      const data: ActivityRecord[] =
-        jsonValue != null ? JSON.parse(jsonValue) : [];
-      recalculateStats(data);
-    } catch (e) {
-      console.error("Failed to load data", e);
-    }
-  };
-
   const recalculateStats = (data: ActivityRecord[]) => {
-    const newStats: PersonaStats = {
-      knowledge: 0,
-      courage: 0,
-      charm: 0,
-      kindness: 0,
-      dexterity: 0,
-      expression: 0,
-      diligence: 0,
-    };
+    let state = initializeEmptyStats();
     data.forEach((record) => {
-      newStats.knowledge += record.gainedStats.knowledge || 0;
-      newStats.courage += record.gainedStats.courage || 0;
-      newStats.charm += record.gainedStats.charm || 0;
-      newStats.kindness += record.gainedStats.kindness || 0;
-      newStats.dexterity += record.gainedStats.dexterity || 0;
-      newStats.expression += record.gainedStats.expression || 0;
-      newStats.diligence += record.gainedStats.diligence || 0;
+      const points =
+        // 兼容旧数据字段 gainedStats
+        (record as any).gainedPoints ??
+        (record as any).gainedStats ??
+        ({} as PersonaStatsPoints);
+      const { next } = calculateNewStats(state, points, currentTheme);
+      state = next;
     });
-    setTotalStats(newStats);
+    setTotalStats(state);
   };
 
   // 提交处理
@@ -113,7 +112,10 @@ export default function HomeScreen() {
     setLoading(true);
     try {
       // 1. AI 计算
-      const gainedStats = await analyzeActivityWithAI(activityName, feeling);
+      const gainedPoints: PersonaStatsPoints = await analyzeActivityWithAI(
+        activityName,
+        feeling,
+      );
 
       // 2. 构建新记录
       const newRecord: ActivityRecord = {
@@ -122,7 +124,7 @@ export default function HomeScreen() {
         timestamp: Date.now(),
         activityName,
         feeling,
-        gainedStats,
+        gainedPoints,
       };
 
       // 3. 保存到本地 (Append mode)
@@ -135,18 +137,20 @@ export default function HomeScreen() {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
 
       // 4. 更新 UI
-      recalculateStats(newData);
+      const calc = calculateNewStats(totalStats, gainedPoints, currentTheme);
+      setTotalStats(calc.next);
+      setLevelUpEvents(calc.rankUps);
       setActivityName("");
       setFeeling("");
 
       // 5. 简单的反馈动画/Alert
       let msg = t("home.stats_updated") + "\n";
-      Object.entries(gainedStats).forEach(([k, v]) => {
+      Object.entries(gainedPoints).forEach(([k, v]) => {
         if (v > 0) msg += `${t(`stats.${k}`).toUpperCase()} +${v} ♪\n`;
       });
       setModalContent({ title: t("home.rank_up"), message: msg });
       setModalVisible(true);
-    } catch (error) {
+    } catch {
       setModalContent({
         title: "Error",
         message: "The velvet room is closed currently.",
@@ -237,18 +241,42 @@ export default function HomeScreen() {
                     fontSize={10}
                   />
                 </View>
-                <AnimatedNumber
-                  value={totalStats[stat]}
-                  style={{
-                    marginTop: 8,
-                    fontSize: 24,
-                    fontWeight: "900",
-                    color: themeConfig.colors.primary,
-                    textShadowColor: themeConfig.colors.shadow,
-                    textShadowOffset: { width: 2, height: 2 },
-                    textShadowRadius: 1,
-                  }}
-                />
+                <View style={{ alignItems: "center" }}>
+                  <AnimatedNumber
+                    value={totalStats[stat].value}
+                    style={{
+                      marginTop: 8,
+                      fontSize: 24,
+                      fontWeight: "900",
+                      color: themeConfig.colors.primary,
+                      textShadowColor: themeConfig.colors.shadow,
+                      textShadowOffset: { width: 2, height: 2 },
+                      textShadowRadius: 1,
+                    }}
+                  />
+                  <View style={{ flexDirection: "row", marginTop: 4 }}>
+                    <StickerText
+                      text={`R${totalStats[stat].rank}`}
+                      themeConfig={themeConfig}
+                      fontSize={10}
+                    />
+                    {totalStats[stat].isMaxed && (
+                      <StickerText
+                        text={"MAX"}
+                        themeConfig={themeConfig}
+                        fontSize={10}
+                        textColor={
+                          currentTheme === "P5"
+                            ? "#FF0000"
+                            : currentTheme === "P3"
+                            ? "#00AEEF"
+                            : themeConfig.colors.accent
+                        }
+                        style={{ marginLeft: 6 }}
+                      />
+                    )}
+                  </View>
+                </View>
               </View>
             ))}
           </View>
@@ -326,7 +354,6 @@ export default function HomeScreen() {
                 text={t("home.submit_btn")}
                 themeConfig={themeConfig}
                 fontSize={20}
-                style={{ textAlign: "center" }}
               />
             )}
           </TouchableOpacity>
@@ -426,6 +453,12 @@ export default function HomeScreen() {
           title={modalContent.title}
           message={modalContent.message}
           onClose={() => setModalVisible(false)}
+          themeConfig={themeConfig}
+        />
+        <LevelUpModal
+          visible={levelUpEvents.length > 0}
+          events={levelUpEvents}
+          onClose={() => setLevelUpEvents([])}
           themeConfig={themeConfig}
         />
       </ScrollView>

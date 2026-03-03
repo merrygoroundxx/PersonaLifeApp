@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import i18n from "i18next";
 import { Platform } from "react-native";
-import { PersonaStats } from "../utils/types";
+import { PersonaStatsPoints } from "../utils/types";
 
 const API_KEY_STORAGE = "persona_ai_api_key";
 const BASE_URL_STORAGE = "persona_ai_base_url";
@@ -51,7 +51,7 @@ export const getAIConfig = async (): Promise<AIConfig | null> => {
 export const analyzeActivityWithAI = async (
   activity: string,
   feeling: string,
-): Promise<PersonaStats> => {
+): Promise<PersonaStatsPoints> => {
   const config = await getAIConfig();
   const currentLanguage = i18n.language || "zh";
 
@@ -86,7 +86,7 @@ export const analyzeActivityWithAI = async (
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-    const stats: PersonaStats = JSON.parse(content);
+    const stats: PersonaStatsPoints = JSON.parse(content);
     return stats;
   } catch (error) {
     console.error("AI Analysis failed, falling back to heuristics", error);
@@ -94,9 +94,9 @@ export const analyzeActivityWithAI = async (
   }
 };
 
-const fallbackHeuristic = (activity: string, feeling: string): PersonaStats => {
+const fallbackHeuristic = (activity: string, feeling: string): PersonaStatsPoints => {
   const text = (activity + feeling).toLowerCase();
-  const stats: PersonaStats = {
+  const stats: PersonaStatsPoints = {
     knowledge: 0,
     courage: 0,
     charm: 0,
@@ -122,7 +122,7 @@ const fallbackHeuristic = (activity: string, feeling: string): PersonaStats => {
 
   // Fallback if no match
   if (Object.values(stats).every((v) => v === 0)) {
-    const keys = Object.keys(stats) as (keyof PersonaStats)[];
+    const keys = Object.keys(stats) as (keyof PersonaStatsPoints)[];
     const randomKey = keys[Math.floor(Math.random() * keys.length)];
     stats[randomKey] += 1;
   }

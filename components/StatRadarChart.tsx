@@ -1,27 +1,28 @@
 import React, { useEffect } from "react";
 import { View } from "react-native";
+import type { SharedValue } from "react-native-reanimated";
 import Animated, {
-  useAnimatedProps,
-  useSharedValue,
-  withSpring
+    useAnimatedProps,
+    useSharedValue,
+    withSpring,
 } from "react-native-reanimated";
 import Svg, {
-  Circle,
-  Defs,
-  G,
-  Line,
-  Polygon,
-  RadialGradient,
-  Stop,
-  Text as SvgText
+    Circle,
+    Defs,
+    G,
+    Line,
+    Polygon,
+    RadialGradient,
+    Stop,
+    Text as SvgText,
 } from "react-native-svg";
 import { ThemeConfig } from "../types/theme";
-import { PersonaStats } from "../utils/types";
+import { PersonaStatsState, StatType } from "../utils/types";
 
 const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
 
 interface RadarChartProps {
-  stats: PersonaStats;
+  stats: PersonaStatsState;
   themeConfig: ThemeConfig;
   size?: number;
 }
@@ -38,12 +39,21 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
   const angleStep = (2 * Math.PI) / numStats;
   const maxValue = 50;
 
-  // Reanimated shared values for each stat
-  const animatedStats = activeStats.map(() => useSharedValue(0));
+  const shared = {
+    knowledge: useSharedValue(0),
+    courage: useSharedValue(0),
+    charm: useSharedValue(0),
+    kindness: useSharedValue(0),
+    dexterity: useSharedValue(0),
+    expression: useSharedValue(0),
+    diligence: useSharedValue(0),
+  } as Record<StatType, SharedValue<number>>;
+
+  const orderedShared = activeStats.map((stat) => shared[stat]);
 
   useEffect(() => {
     activeStats.forEach((stat, i) => {
-      animatedStats[i].value = withSpring(stats[stat] || 0, {
+      shared[stat].value = withSpring(stats[stat].value || 0, {
         damping: 10,
         stiffness: 80,
       });
@@ -51,18 +61,16 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
   }, [stats, activeStats]);
 
   const animatedProps = useAnimatedProps(() => {
-    const points = activeStats.map((_, i) => {
-      const value = animatedStats[i].value;
+    const pts: string[] = [];
+    for (let i = 0; i < orderedShared.length; i++) {
+      const value = orderedShared[i].value;
       const r = (Math.min(value, maxValue) / maxValue) * radius;
       const angle = i * angleStep - Math.PI / 2;
-      return {
-        x: center + r * Math.cos(angle),
-        y: center + r * Math.sin(angle),
-      };
-    });
-    return {
-      points: points.map((p) => `${p.x},${p.y}`).join(" "),
-    };
+      const x = center + r * Math.cos(angle);
+      const y = center + r * Math.sin(angle);
+      pts.push(`${x},${y}`);
+    }
+    return { points: pts.join(" ") };
   });
 
   const renderBackground = () => {
@@ -167,13 +175,6 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
                 fontWeight="900"
                 textAnchor="middle"
                 alignmentBaseline="middle"
-                style={{
-                  fontFamily: styles.fontFamily,
-                  transform:
-                    styles.containerType === "jagged"
-                      ? [{ rotate: `${(Math.random() - 0.5) * 20}deg` }]
-                      : [],
-                }}
               >
                 {stat.toUpperCase()}
               </SvgText>

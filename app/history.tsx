@@ -8,7 +8,7 @@ import PersonaContainer from "../components/PersonaContainer";
 import StickerText from "../components/StickerText";
 
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
-import { ActivityRecord } from "../utils/types";
+import { ActivityRecord, PersonaStatsPoints } from "../utils/types";
 
 const STORAGE_KEY = "@persona_activities";
 const THEME_STORAGE_KEY = "@persona_current_theme";
@@ -65,7 +65,6 @@ export default function HistoryScreen() {
               text={format(today, "MMMM yyyy").toUpperCase()}
               themeConfig={themeConfig}
               fontSize={20}
-              style={{ textAlign: "center" }}
             />
           </PersonaContainer>
 
@@ -184,13 +183,17 @@ export default function HistoryScreen() {
                 text={`"${record.feeling}"`}
                 themeConfig={themeConfig}
                 fontSize={14}
-                style={{ marginBottom: 10, fontStyle: "italic" }}
+            style={{ marginBottom: 10 }}
               />
 
               {/* 显示提升的数值 */}
               <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {themeConfig.stats.map((key) => {
-                  const val = record.gainedStats[key];
+                  const points =
+                    (record as any).gainedPoints ??
+                    (record as any).gainedStats ??
+                    ({} as PersonaStatsPoints);
+                  const val = points[key];
                   if (!val || val === 0) return null;
                   return (
                     <View

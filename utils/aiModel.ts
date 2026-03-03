@@ -1,4 +1,4 @@
 import { analyzeActivityWithAI } from "../services/aiService";
-import { PersonaStats } from "./types";
+import { PersonaStatsPoints } from "./types";
 
 export { analyzeActivityWithAI };

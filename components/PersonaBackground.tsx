@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { ColorValue, StyleSheet, View } from "react-native";
 import Svg, { Circle, Defs, Line, Pattern, Rect } from "react-native-svg";
 import { ThemeConfig } from "../types/theme";
 
@@ -100,9 +100,16 @@ const PersonaBackground: React.FC<PersonaBackgroundProps> = ({
   };
 
   if (colors.gradient) {
+    const gradientColors = (colors.gradient && colors.gradient.length >= 2
+      ? colors.gradient
+      : [colors.background, colors.primary]) as unknown as readonly [
+      ColorValue,
+      ColorValue,
+      ...ColorValue[],
+    ];
     return (
       <LinearGradient
-        colors={[...colors.gradient]}
+        colors={gradientColors}
         style={{ flex: 1 }}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
