@@ -1,7 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import PersonaBackground from "../components/PersonaBackground";
 import PersonaContainer from "../components/PersonaContainer";
@@ -16,7 +22,8 @@ const LANGUAGE_KEY = "@persona_current_language";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
-  const { currentTheme, themeConfig, setTheme } = useTheme();
+  const { currentTheme, themeConfig, setTheme, isDemoMode, toggleDemoMode } =
+    useTheme();
   const [apiKey, setApiKey] = useState("");
   const [baseURL, setBaseURL] = useState("");
 
@@ -174,6 +181,38 @@ export default function SettingsScreen() {
                 />
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        {/* Demo Mode Toggle */}
+        <View style={{ marginBottom: 40, alignItems: "flex-start" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginLeft: 10,
+            }}
+          >
+            <StickerText
+              text="DEMO MODE"
+              themeConfig={themeConfig}
+              fontSize={18}
+              textColor={
+                themeConfig.styles.containerType === "jagged"
+                  ? undefined
+                  : themeConfig.colors.text
+              }
+              style={{ marginRight: 20 }}
+            />
+            <Switch
+              value={isDemoMode}
+              onValueChange={toggleDemoMode}
+              trackColor={{
+                false: "#767577",
+                true: themeConfig.colors.primary,
+              }}
+              thumbColor={isDemoMode ? themeConfig.colors.accent : "#f4f3f4"}
+            />
           </View>
         </View>
 

@@ -24,6 +24,7 @@ import StickerText from "../components/StickerText";
 import { useTheme } from "../context/ThemeContext";
 import {
   calculateNewStats,
+  getDemoStats,
   initializeEmptyStats,
   RankUpEvent,
 } from "../services/statsManager";
@@ -40,7 +41,7 @@ const STORAGE_KEY = "@persona_activities";
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { currentTheme, themeConfig } = useTheme();
+  const { currentTheme, themeConfig, isDemoMode } = useTheme();
 
   // 输入状态
   const [activityName, setActivityName] = useState("");
@@ -58,6 +59,10 @@ export default function HomeScreen() {
   const [levelUpEvents, setLevelUpEvents] = useState<RankUpEvent[]>([]);
 
   const loadData = useCallback(async () => {
+    if (isDemoMode) {
+      setTotalStats(getDemoStats(currentTheme));
+      return;
+    }
     try {
       const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
       const data: ActivityRecord[] =
@@ -66,7 +71,7 @@ export default function HomeScreen() {
     } catch (e) {
       console.error("Failed to load data", e);
     }
-  }, [currentTheme]);
+  }, [currentTheme, isDemoMode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -315,8 +320,10 @@ export default function HomeScreen() {
           </PersonaContainer>
 
           <StatRadarChart
+            key={currentTheme}
             stats={totalStats}
             themeConfig={themeConfig}
+            currentTheme={currentTheme}
             size={scaleSize(320)}
           />
 

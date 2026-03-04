@@ -8,6 +8,8 @@ interface ThemeContextType {
   currentTheme: PersonaTheme;
   themeConfig: ThemeConfig;
   setTheme: (theme: PersonaTheme) => Promise<void>;
+  isDemoMode: boolean;
+  toggleDemoMode: (value: boolean) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,6 +18,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [currentTheme, setCurrentTheme] = useState<PersonaTheme>("P5");
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     loadTheme();
@@ -41,10 +44,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const toggleDemoMode = (value: boolean) => {
+    setIsDemoMode(value);
+  };
+
   const themeConfig = THEME_CONFIGS[currentTheme];
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, themeConfig, setTheme }}>
+    <ThemeContext.Provider
+      value={{
+        currentTheme,
+        themeConfig,
+        setTheme,
+        isDemoMode,
+        toggleDemoMode,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );

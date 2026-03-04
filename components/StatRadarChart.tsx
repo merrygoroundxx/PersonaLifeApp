@@ -2,76 +2,121 @@ import React, { useEffect } from "react";
 import { View } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import Animated, {
-    useAnimatedProps,
-    useSharedValue,
-    withSpring,
+  useAnimatedProps,
+  useDerivedValue,
+  useSharedValue,
+  withSpring,
 } from "react-native-reanimated";
 import Svg, {
-    Circle,
-    Defs,
-    G,
-    Line,
-    Polygon,
-    RadialGradient,
-    Stop,
-    Text as SvgText,
+  Circle,
+  Defs,
+  G,
+  Line,
+  Path,
+  Polygon,
+  RadialGradient,
+  Stop,
+  Text as SvgText,
 } from "react-native-svg";
-import { ThemeConfig } from "../types/theme";
+import { getStatsConfigByTheme } from "../constants/statsConfig";
+import { PersonaTheme, ThemeConfig } from "../types/theme";
 import { scaleFont, scaleSize } from "../utils/layout";
 import { PersonaStatsState, StatType } from "../utils/types";
 
-const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 interface RadarChartProps {
   stats: PersonaStatsState;
   themeConfig: ThemeConfig;
+  currentTheme: PersonaTheme;
   size?: number;
 }
 
 const StatRadarChart: React.FC<RadarChartProps> = ({
   stats,
   themeConfig,
+  currentTheme,
   size = 300,
 }) => {
+  // Debug log
+  useEffect(() => {
+    console.log("StatRadarChart Stats Update:", {
+      theme: currentTheme,
+      knowledge: stats.knowledge.value,
+      courage: stats.courage.value,
+    });
+  }, [stats, currentTheme]);
+
   const { stats: activeStats, colors, styles } = themeConfig;
   const numStats = activeStats.length;
   const center = size / 2;
   const radius = (size / 2) * 0.7;
   const angleStep = (2 * Math.PI) / numStats;
-  const maxValue = 50;
 
-  const shared = {
-    knowledge: useSharedValue(0),
-    courage: useSharedValue(0),
-    charm: useSharedValue(0),
-    kindness: useSharedValue(0),
-    dexterity: useSharedValue(0),
-    expression: useSharedValue(0),
-    diligence: useSharedValue(0),
-  } as Record<StatType, SharedValue<number>>;
+  // Stable shared values
+  const knowledge = useSharedValue(0);
+  const courage = useSharedValue(0);
+  const charm = useSharedValue(0);
+  const kindness = useSharedValue(0);
+  const dexterity = useSharedValue(0);
+  const expression = useSharedValue(0);
+  const diligence = useSharedValue(0);
 
-  const orderedShared = activeStats.map((stat) => shared[stat]);
+  const shared = React.useMemo(
+    () =>
+      ({
+        knowledge,
+        courage,
+        charm,
+        kindness,
+        dexterity,
+        expression,
+        diligence,
+      }) as Record<StatType, SharedValue<number>>,
+    [knowledge, courage, charm, kindness, dexterity, expression, diligence],
+  );
+
+  const orderedShared = React.useMemo(
+    () => activeStats.map((stat) => shared[stat]),
+    [activeStats, shared],
+  );
 
   useEffect(() => {
-    activeStats.forEach((stat, i) => {
-      shared[stat].value = withSpring(stats[stat].value || 0, {
+    const config = getStatsConfigByTheme(currentTheme);
+    activeStats.forEach((stat) => {
+      const max = config.thresholds[stat][4];
+      const rawValue = stats[stat].value || 0;
+      // Calculate normalized value (0 to 1)
+      const normalized = max > 0 ? Math.min(rawValue, max) / max : 0;
+
+      shared[stat].value = withSpring(normalized, {
         damping: 10,
         stiffness: 80,
       });
     });
-  }, [stats, activeStats]);
+  }, [stats, activeStats, currentTheme, shared]);
 
-  const animatedProps = useAnimatedProps(() => {
-    const pts: string[] = [];
+  const pathD = useDerivedValue(() => {
+    if (orderedShared.length === 0) return "";
+    let d = "";
     for (let i = 0; i < orderedShared.length; i++) {
-      const value = orderedShared[i].value;
-      const r = (Math.min(value, maxValue) / maxValue) * radius;
+      const normalizedValue = orderedShared[i].value;
+      const r = normalizedValue * radius;
       const angle = i * angleStep - Math.PI / 2;
       const x = center + r * Math.cos(angle);
       const y = center + r * Math.sin(angle);
-      pts.push(`${x},${y}`);
+      if (i === 0) {
+        d += `M ${x} ${y}`;
+      } else {
+        d += ` L ${x} ${y}`;
+      }
     }
-    return { points: pts.join(" ") };
+    d += " Z";
+    return d;
+  }, [orderedShared, radius, center, angleStep]);
+
+  const animatedProps = useAnimatedProps(() => {
+    return { d: pathD.value };
   });
 
   const renderBackground = () => {
@@ -151,7 +196,7 @@ const StatRadarChart: React.FC<RadarChartProps> = ({
           })}
 
           {/* Stat Polygon */}
-          <AnimatedPolygon
+          <AnimatedPath
             animatedProps={animatedProps}
             fill={colors.primary}
             fillOpacity={styles.containerType === "glass-cut" ? 0.4 : 0.8}
