@@ -58,7 +58,7 @@ export const THEME_CONFIGS: Record<PersonaTheme, ThemeConfig> = {
       secondary: "#FFA500",
       background: "#332200",
       accent: "#000000",
-      text: "#000000",
+      text: "#FFFFFF",
       shadow: "rgba(0, 0, 0, 0.5)",
     },
     styles: {

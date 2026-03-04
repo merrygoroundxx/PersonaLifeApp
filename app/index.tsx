@@ -372,6 +372,11 @@ export default function HomeScreen() {
                       text={`R${totalStats[stat].rank}`}
                       themeConfig={themeConfig}
                       fontSize={scaleFont(10)}
+                      textColor={
+                        themeConfig.styles.containerType === "jagged"
+                          ? undefined
+                          : themeConfig.colors.text
+                      }
                     />
                     {totalStats[stat].isMaxed && (
                       <StickerText
@@ -383,7 +388,7 @@ export default function HomeScreen() {
                             ? "#FF0000"
                             : currentTheme === "P3"
                               ? "#00AEEF"
-                              : themeConfig.colors.accent
+                              : themeConfig.colors.primary
                         }
                         style={{ marginLeft: scaleSize(6) }}
                       />

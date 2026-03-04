@@ -85,6 +85,11 @@ export default function SettingsScreen() {
             text={t("settings.language_label")}
             themeConfig={themeConfig}
             fontSize={18}
+            textColor={
+              themeConfig.styles.containerType === "jagged"
+                ? undefined
+                : themeConfig.colors.text
+            }
             style={{ marginBottom: 15, marginLeft: 10 }}
           />
           <View
@@ -128,6 +133,11 @@ export default function SettingsScreen() {
             text={t("settings.theme_label")}
             themeConfig={themeConfig}
             fontSize={18}
+            textColor={
+              themeConfig.styles.containerType === "jagged"
+                ? undefined
+                : themeConfig.colors.text
+            }
             style={{ marginBottom: 15, marginLeft: 10 }}
           />
           <View
@@ -176,6 +186,11 @@ export default function SettingsScreen() {
             text={t("settings.api_key_label")}
             themeConfig={themeConfig}
             fontSize={14}
+            textColor={
+              themeConfig.styles.containerType === "jagged"
+                ? undefined
+                : themeConfig.colors.text
+            }
             style={{ marginBottom: 10 }}
           />
           <TextInput
@@ -199,6 +214,11 @@ export default function SettingsScreen() {
             text={t("settings.api_url_label")}
             themeConfig={themeConfig}
             fontSize={14}
+            textColor={
+              themeConfig.styles.containerType === "jagged"
+                ? undefined
+                : themeConfig.colors.text
+            }
             style={{ marginBottom: 10 }}
           />
           <TextInput
@@ -239,6 +259,11 @@ export default function SettingsScreen() {
           text={t("settings.iamthou")}
           themeConfig={themeConfig}
           fontSize={12}
+          textColor={
+            themeConfig.styles.containerType === "jagged"
+              ? undefined
+              : themeConfig.colors.text
+          }
           style={{ marginBottom: 40, opacity: 0.5 }}
         />
 
