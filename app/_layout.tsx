@@ -1,18 +1,24 @@
 import { Stack } from "expo-router";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import "../src/i18n";
 import "./global.css";
 
-export default function RootLayout() {
+function RootLayoutNav() {
+  const { themeConfig } = useTheme();
+
   return (
     <SafeAreaProvider>
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "#D32F2F" },
-          headerTintColor: "#fff",
-          headerTitleStyle: { fontWeight: "bold", fontFamily: "System" },
-          contentStyle: { backgroundColor: "#555555" }, // 默认背景
+          headerStyle: { backgroundColor: themeConfig.colors.primary },
+          headerTintColor: themeConfig.colors.accent,
+          headerTitleStyle: {
+            fontWeight: "bold",
+            fontFamily: themeConfig.styles.fontFamily,
+          },
+          contentStyle: { backgroundColor: themeConfig.colors.background },
         }}
       >
         <Stack.Screen name="index" options={{ title: "Daily Life (日常)" }} />
@@ -26,5 +32,13 @@ export default function RootLayout() {
         />
       </Stack>
     </SafeAreaProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutNav />
+    </ThemeProvider>
   );
 }

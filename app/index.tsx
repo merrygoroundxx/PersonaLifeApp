@@ -21,12 +21,12 @@ import PersonaContainer from "../components/PersonaContainer";
 import PersonaModal from "../components/PersonaModal";
 import StatRadarChart from "../components/StatRadarChart";
 import StickerText from "../components/StickerText";
+import { useTheme } from "../context/ThemeContext";
 import {
   calculateNewStats,
   initializeEmptyStats,
   RankUpEvent,
 } from "../services/statsManager";
-import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 import { analyzeActivityWithAI } from "../utils/aiModel";
 import { heightPercent, scaleFont, scaleSize } from "../utils/layout";
 import {
@@ -36,17 +36,16 @@ import {
 } from "../utils/types";
 
 const STORAGE_KEY = "@persona_activities";
-const THEME_STORAGE_KEY = "@persona_current_theme";
 
 export default function HomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { currentTheme, themeConfig } = useTheme();
 
   // 输入状态
   const [activityName, setActivityName] = useState("");
   const [feeling, setFeeling] = useState("");
   const [loading, setLoading] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState<PersonaTheme>("P5");
 
   // Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -58,11 +57,6 @@ export default function HomeScreen() {
   );
   const [levelUpEvents, setLevelUpEvents] = useState<RankUpEvent[]>([]);
 
-  const loadTheme = useCallback(async () => {
-    const theme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-    if (theme) setCurrentTheme(theme as PersonaTheme);
-  }, []);
-
   const loadData = useCallback(async () => {
     try {
       const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
@@ -72,18 +66,13 @@ export default function HomeScreen() {
     } catch (e) {
       console.error("Failed to load data", e);
     }
-  }, []);
+  }, [currentTheme]);
 
   useFocusEffect(
     useCallback(() => {
-      const loadInitial = async () => {
-        await Promise.all([loadData(), loadTheme()]);
-      };
-      loadInitial();
-    }, [loadData, loadTheme]),
+      loadData();
+    }, [loadData]),
   );
-
-  const themeConfig = THEME_CONFIGS[currentTheme];
 
   const safeNavigate = (path: any) => {
     if (Platform.OS === "web") {

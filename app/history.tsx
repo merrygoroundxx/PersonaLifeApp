@@ -7,29 +7,20 @@ import PersonaBackground from "../components/PersonaBackground";
 import PersonaContainer from "../components/PersonaContainer";
 import StickerText from "../components/StickerText";
 
-import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
+import { useTheme } from "../context/ThemeContext";
 import { ActivityRecord, PersonaStatsPoints } from "../utils/types";
 
 const STORAGE_KEY = "@persona_activities";
-const THEME_STORAGE_KEY = "@persona_current_theme";
 
 export default function HistoryScreen() {
   const { t } = useTranslation();
+  const { currentTheme, themeConfig } = useTheme();
   const [activities, setActivities] = useState<ActivityRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [currentTheme, setCurrentTheme] = useState<PersonaTheme>("P5");
 
   useEffect(() => {
     loadData();
-    loadTheme();
   }, []);
-
-  const loadTheme = async () => {
-    const theme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-    if (theme) setCurrentTheme(theme as PersonaTheme);
-  };
-
-  const themeConfig = THEME_CONFIGS[currentTheme];
 
   const loadData = async () => {
     const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);

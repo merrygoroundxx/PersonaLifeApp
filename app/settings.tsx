@@ -7,6 +7,7 @@ import PersonaBackground from "../components/PersonaBackground";
 import PersonaContainer from "../components/PersonaContainer";
 import PersonaModal from "../components/PersonaModal";
 import StickerText from "../components/StickerText";
+import { useTheme } from "../context/ThemeContext";
 import { getAIConfig, saveAIConfig } from "../services/aiService";
 import { PersonaTheme, THEME_CONFIGS } from "../types/theme";
 
@@ -15,9 +16,9 @@ const LANGUAGE_KEY = "@persona_current_language";
 
 export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
+  const { currentTheme, themeConfig, setTheme } = useTheme();
   const [apiKey, setApiKey] = useState("");
   const [baseURL, setBaseURL] = useState("");
-  const [currentTheme, setCurrentTheme] = useState<PersonaTheme>("P5");
 
   // Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -33,16 +34,11 @@ export default function SettingsScreen() {
       setApiKey(config.apiKey);
       setBaseURL(config.baseURL);
     }
-    const theme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-    if (theme) {
-      setCurrentTheme(theme as PersonaTheme);
-    }
   };
 
   const handleSave = async () => {
     try {
       await saveAIConfig({ apiKey, baseURL });
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, currentTheme);
       setModalContent({
         title: t("settings.title"),
         message: t("settings.save_success"),
@@ -61,8 +57,6 @@ export default function SettingsScreen() {
     await i18n.changeLanguage(lng);
     await AsyncStorage.setItem(LANGUAGE_KEY, lng);
   };
-
-  const themeConfig = THEME_CONFIGS[currentTheme];
 
   return (
     <PersonaBackground themeConfig={themeConfig}>
@@ -146,7 +140,7 @@ export default function SettingsScreen() {
             {(Object.keys(THEME_CONFIGS) as PersonaTheme[]).map((theme) => (
               <TouchableOpacity
                 key={theme}
-                onPress={() => setCurrentTheme(theme)}
+                onPress={() => setTheme(theme)}
                 style={{
                   paddingHorizontal: 24,
                   paddingVertical: 16,
