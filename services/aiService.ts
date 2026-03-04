@@ -61,32 +61,99 @@ export const analyzeActivityWithAI = async (
 
   const systemPrompt = i18n.t("ai.system_prompt");
 
-  try {
-    const response = await fetch(`${config.baseURL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo", // Or user configured model
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: `Activity: ${activity}\nFeeling: ${feeling}`,
-          },
-        ],
-        temperature: 0.7,
-      }),
-    });
+  // Clean up base URL (remove trailing slash if present)
+  const baseURL = config.baseURL.replace(/\/+$/, "");
 
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    const stats: PersonaStatsPoints = JSON.parse(content);
+  try {
+    let response;
+    let data;
+    let content;
+
+    // Detect Gemini (Google AI)
+    if (baseURL.includes("googleapis.com")) {
+      // Fallback to gemini-pro if flash is not available for the key
+      const model = "gemini-2.5-flash";
+      const url = `${baseURL}/v1beta/models/${model}:generateContent?key=${config.apiKey}`;
+
+      response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `${systemPrompt}\n\nActivity: ${activity}\nFeeling: ${feeling}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            response_mime_type: "application/json",
+          },
+        }),
+      });
+
+      data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error.message || "Gemini API Error");
+      }
+
+      if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+        throw new Error("Invalid Gemini response structure");
+      }
+
+      content = data.candidates[0].content.parts[0].text;
+    } else {
+      // Default to OpenAI/DeepSeek format
+      let model = "gpt-3.5-turbo";
+
+      // Auto-detect DeepSeek
+      if (baseURL.includes("deepseek")) {
+        model = "deepseek-chat";
+      }
+
+      response = await fetch(`${baseURL}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: model, // Use auto-detected model
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: `Activity: ${activity}\nFeeling: ${feeling}`,
+            },
+          ],
+          temperature: 0.7,
+        }),
+      });
+
+      data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error.message || "OpenAI API Error");
+      }
+
+      content = data.choices[0].message.content;
+    }
+
+    // Clean up content (sometimes markdown code blocks are included)
+    const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
+    const stats: PersonaStatsPoints = JSON.parse(jsonStr);
+
+    console.log(
+      `AI Analysis Successful via ${baseURL.includes("googleapis.com") ? "Gemini" : "OpenAI/DeepSeek"}`,
+    );
     return stats;
   } catch (error) {
     console.error("AI Analysis failed, falling back to heuristics", error);
@@ -94,7 +161,10 @@ export const analyzeActivityWithAI = async (
   }
 };
 
-const fallbackHeuristic = (activity: string, feeling: string): PersonaStatsPoints => {
+const fallbackHeuristic = (
+  activity: string,
+  feeling: string,
+): PersonaStatsPoints => {
   const text = (activity + feeling).toLowerCase();
   const stats: PersonaStatsPoints = {
     knowledge: 0,
