@@ -2,6 +2,10 @@
 
 [English](#english) | [中文](#chinese)
 
+[beta-release](https://github.com/merrygoroundxx/PersonaLifeApp/releases/tag/beta "beta-release apk") 
+
+![59f1ce4202660f57a4de112fa342cb01_720](https://github.com/user-attachments/assets/cba896fc-bcbe-4102-87dc-1f5171ae4315)
+
 <a name="english"></a>
 
 ## 🎭 PersonaLifeRN (English)
