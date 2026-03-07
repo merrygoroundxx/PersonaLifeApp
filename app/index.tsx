@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { format } from "date-fns";
 import { File, Paths } from "expo-file-system";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Sharing from "expo-sharing";
@@ -28,7 +29,10 @@ import {
   initializeEmptyStats,
   RankUpEvent,
 } from "../services/statsManager";
-import { analyzeActivityWithAI } from "../utils/aiModel";
+import {
+  analyzeActivityWithAI,
+  normalizePersonaStatsPoints,
+} from "../utils/aiModel";
 import { heightPercent, scaleFont, scaleSize } from "../utils/layout";
 import {
   ActivityRecord,
@@ -37,6 +41,60 @@ import {
 } from "../utils/types";
 
 const STORAGE_KEY = "@persona_activities";
+const STAT_KEYS: (keyof PersonaStatsPoints)[] = [
+  "knowledge",
+  "courage",
+  "charm",
+  "kindness",
+  "dexterity",
+  "expression",
+  "diligence",
+];
+
+const hasCanonicalPoints = (
+  points: unknown,
+  normalized: PersonaStatsPoints,
+): boolean => {
+  if (!points || typeof points !== "object") return false;
+  const source = points as Record<string, unknown>;
+  return STAT_KEYS.every((key) => source[key] === normalized[key]);
+};
+
+const normalizeStoredActivities = (
+  records: ActivityRecord[],
+): { normalizedData: ActivityRecord[]; hasChanges: boolean } => {
+  let hasChanges = false;
+
+  const normalizedData = records.map((record) => {
+    const rawRecord = record as ActivityRecord & { gainedStats?: unknown };
+    const rawPoints = rawRecord.gainedPoints ?? rawRecord.gainedStats ?? {};
+    const normalizedPoints = normalizePersonaStatsPoints(rawPoints);
+    const canonical = hasCanonicalPoints(rawRecord.gainedPoints, normalizedPoints);
+    const hadLegacyField = rawRecord.gainedStats !== undefined;
+    const parsedTimestamp = Number(rawRecord.timestamp);
+    const normalizedTimestamp = Number.isFinite(parsedTimestamp)
+      ? parsedTimestamp
+      : Date.now();
+    const normalizedDate = format(new Date(normalizedTimestamp), "yyyy-MM-dd");
+    const hadWrongDate = rawRecord.date !== normalizedDate;
+    const hadWrongTimestamp = rawRecord.timestamp !== normalizedTimestamp;
+
+    if (!canonical || hadLegacyField || hadWrongDate || hadWrongTimestamp) {
+      hasChanges = true;
+    }
+
+    const normalizedRecord = {
+      ...(rawRecord as ActivityRecord & { gainedStats?: unknown }),
+      timestamp: normalizedTimestamp,
+      date: normalizedDate,
+      gainedPoints: normalizedPoints,
+    };
+    delete (normalizedRecord as { gainedStats?: unknown }).gainedStats;
+    return normalizedRecord;
+  });
+
+  return { normalizedData, hasChanges };
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -57,27 +115,36 @@ export default function HomeScreen() {
     initializeEmptyStats(),
   );
   const [levelUpEvents, setLevelUpEvents] = useState<RankUpEvent[]>([]);
+  const isP5Theme = currentTheme === "P5";
+  const calButtonSize = isP5Theme ? scaleSize(70) : scaleSize(80);
+  const mainButtonSize = isP5Theme ? scaleSize(100) : scaleSize(120);
+  const sideButtonWidth = isP5Theme ? scaleSize(76) : scaleSize(90);
+  const sideButtonHeight = isP5Theme ? scaleSize(52) : scaleSize(60);
+  const sideButtonFontSize = scaleFont(isP5Theme ? 7 : 10);
+  const calButtonFontSize = scaleFont(isP5Theme ? 9 : 12);
 
-  const loadData = useCallback(async () => {
-    if (isDemoMode) {
-      setTotalStats(getDemoStats(currentTheme));
-      return;
-    }
-    try {
-      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
-      const data: ActivityRecord[] =
-        jsonValue != null ? JSON.parse(jsonValue) : [];
-      recalculateStats(data);
-    } catch (e) {
-      console.error("Failed to load data", e);
-    }
-  }, [currentTheme, isDemoMode]);
+  const renderActionLabel = (label: string, fontSize: number) => {
+    return (
+      <StickerText
+        text={label}
+        themeConfig={themeConfig}
+        fontSize={fontSize}
+        style={isP5Theme ? ({ flexWrap: "nowrap", alignSelf: "center" } as any) : undefined}
+      />
+    );
+  };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData]),
-  );
+  const loadAndNormalizeActivitiesFromStorage = useCallback(async () => {
+    const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+    const rawData: ActivityRecord[] = jsonValue ? JSON.parse(jsonValue) : [];
+    const { normalizedData, hasChanges } = normalizeStoredActivities(rawData);
+
+    if (hasChanges) {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedData));
+    }
+
+    return normalizedData;
+  }, []);
 
   const safeNavigate = (path: any) => {
     if (Platform.OS === "web") {
@@ -86,19 +153,42 @@ export default function HomeScreen() {
     router.push(path);
   };
 
-  const recalculateStats = (data: ActivityRecord[]) => {
-    let state = initializeEmptyStats();
-    data.forEach((record) => {
-      const points =
-        // 兼容旧数据字段 gainedStats
-        (record as any).gainedPoints ??
-        (record as any).gainedStats ??
-        ({} as PersonaStatsPoints);
-      const { next } = calculateNewStats(state, points, currentTheme);
-      state = next;
-    });
-    setTotalStats(state);
-  };
+  const recalculateStats = useCallback(
+    (data: ActivityRecord[]) => {
+      let state = initializeEmptyStats();
+      data.forEach((record) => {
+        const points = record.gainedPoints;
+        const { next } = calculateNewStats(state, points, currentTheme);
+        state = next;
+      });
+      setTotalStats(state);
+    },
+    [currentTheme],
+  );
+
+  const loadData = useCallback(async () => {
+    if (isDemoMode) {
+      setTotalStats(getDemoStats(currentTheme));
+      return;
+    }
+    try {
+      const data = await loadAndNormalizeActivitiesFromStorage();
+      recalculateStats(data);
+    } catch (e) {
+      console.error("Failed to load data", e);
+    }
+  }, [
+    currentTheme,
+    isDemoMode,
+    loadAndNormalizeActivitiesFromStorage,
+    recalculateStats,
+  ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
   // 提交处理
   const handleSubmit = async () => {
@@ -115,11 +205,11 @@ export default function HomeScreen() {
       // 2. 构建新记录
       const newRecord: ActivityRecord = {
         id: Date.now().toString(), // 简单的ID生成
-        date: new Date().toISOString().split("T")[0], // YYYY-MM-DD
+        date: format(new Date(), "yyyy-MM-dd"),
         timestamp: Date.now(),
         activityName,
         feeling,
-        gainedPoints,
+        gainedPoints: normalizePersonaStatsPoints(gainedPoints),
       };
 
       // 3. 保存到本地 (Append mode)
@@ -127,20 +217,23 @@ export default function HomeScreen() {
       const existingData: ActivityRecord[] = existingJson
         ? JSON.parse(existingJson)
         : [];
-      const newData = [...existingData, newRecord];
+      const { normalizedData: normalizedExistingData } =
+        normalizeStoredActivities(existingData);
+      const newData = [...normalizedExistingData, newRecord];
 
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
 
-      // 4. 更新 UI
-      const calc = calculateNewStats(totalStats, gainedPoints, currentTheme);
-      setTotalStats(calc.next);
+      // 4. 更新 UI（以持久化数据为准）
+      const latestData = await loadAndNormalizeActivitiesFromStorage();
+      recalculateStats(latestData);
+      const calc = calculateNewStats(totalStats, newRecord.gainedPoints, currentTheme);
       setLevelUpEvents(calc.rankUps);
       setActivityName("");
       setFeeling("");
 
       // 5. 简单的反馈动画/Alert
       let msg = t("home.stats_updated") + "\n";
-      Object.entries(gainedPoints).forEach(([k, v]) => {
+      Object.entries(newRecord.gainedPoints).forEach(([k, v]) => {
         if (v > 0) msg += `${t(`stats.${k}`).toUpperCase()} +${v} ♪\n`;
       });
       setModalContent({ title: t("home.rank_up"), message: msg });
@@ -165,9 +258,7 @@ export default function HomeScreen() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `persona_life_data_${new Date()
-          .toISOString()
-          .slice(0, 10)}.json`;
+        a.download = `persona_life_data_${format(new Date(), "yyyy-MM-dd")}.json`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -221,7 +312,8 @@ export default function HomeScreen() {
             throw new Error("Invalid data format");
           }
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-          recalculateStats(data);
+          const normalizedData = await loadAndNormalizeActivitiesFromStorage();
+          recalculateStats(normalizedData);
           setModalContent({
             title: "OK",
             message: "Data restored.",
@@ -286,7 +378,8 @@ export default function HomeScreen() {
         throw new Error("Invalid data format");
       }
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      recalculateStats(data);
+      const normalizedData = await loadAndNormalizeActivitiesFromStorage();
+      recalculateStats(normalizedData);
       setModalContent({
         title: "OK",
         message: "Data restored from Documents.",
@@ -509,9 +602,10 @@ export default function HomeScreen() {
           style={{
             flexDirection: "row",
             alignItems: "flex-end",
-            justifyContent: "space-around",
+            justifyContent: "space-between",
             marginBottom: scaleSize(80),
             height: scaleSize(128),
+            gap: scaleSize(8),
           }}
         >
           <TouchableOpacity
@@ -522,17 +616,13 @@ export default function HomeScreen() {
               borderWidth: scaleSize(2),
               backgroundColor: themeConfig.colors.secondary,
               borderColor: themeConfig.colors.primary,
-              width: scaleSize(80),
-              height: scaleSize(80),
+              width: calButtonSize,
+              height: calButtonSize,
               transform: [{ rotate: "-15deg" }, { translateY: 10 }],
             }}
             onPress={() => safeNavigate("/history")}
           >
-            <StickerText
-              text="CAL"
-              themeConfig={themeConfig}
-              fontSize={scaleFont(12)}
-            />
+            {renderActionLabel("CAL", calButtonFontSize)}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -543,8 +633,8 @@ export default function HomeScreen() {
               borderWidth: scaleSize(4),
               backgroundColor: themeConfig.colors.primary,
               borderColor: themeConfig.colors.accent,
-              width: scaleSize(120),
-              height: scaleSize(120),
+              width: mainButtonSize,
+              height: mainButtonSize,
               borderRadius: currentTheme === "P5" ? 0 : scaleSize(60),
               transform: [
                 { rotate: "5deg" },
@@ -579,46 +669,43 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={{
-              padding: scaleSize(16),
-              borderRadius: scaleSize(8),
-              borderWidth: scaleSize(2),
-              backgroundColor: "#444",
-              borderColor: themeConfig.colors.text,
-              width: scaleSize(90),
-              height: scaleSize(60),
-              transform: [{ rotate: "10deg" }, { translateY: -10 }],
-            }}
-            onPress={handleExport}
-          >
-            <StickerText
-              text="EXPORT"
-              themeConfig={themeConfig}
-              fontSize={scaleFont(10)}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={{
-              padding: scaleSize(16),
-              borderRadius: scaleSize(8),
-              borderWidth: scaleSize(2),
-              backgroundColor: "#333",
-              borderColor: themeConfig.colors.text,
-              width: scaleSize(90),
-              height: scaleSize(60),
-              transform: [{ rotate: "-8deg" }, { translateY: -6 }],
-            }}
-            onPress={handleImport}
-          >
-            <StickerText
-              text="IMPORT"
-              themeConfig={themeConfig}
-              fontSize={scaleFont(10)}
-            />
-          </TouchableOpacity>
+          <View style={{ width: sideButtonWidth }}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: scaleSize(8),
+                borderWidth: scaleSize(2),
+                backgroundColor: "#444",
+                borderColor: themeConfig.colors.text,
+                width: sideButtonWidth,
+                height: sideButtonHeight,
+                marginBottom: scaleSize(10),
+                transform: [{ rotate: "10deg" }, { translateY: -10 }],
+              }}
+              onPress={handleExport}
+            >
+              {renderActionLabel(isP5Theme ? "EXP" : "EXPORT", sideButtonFontSize)}
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: scaleSize(8),
+                borderWidth: scaleSize(2),
+                backgroundColor: "#333",
+                borderColor: themeConfig.colors.text,
+                width: sideButtonWidth,
+                height: sideButtonHeight,
+                transform: [{ rotate: "-8deg" }, { translateY: -6 }],
+              }}
+              onPress={handleImport}
+            >
+              {renderActionLabel(isP5Theme ? "IMP" : "IMPORT", sideButtonFontSize)}
+            </TouchableOpacity>
+          </View>
         </View>
 
         <PersonaModal
