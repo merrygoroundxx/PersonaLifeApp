@@ -6,6 +6,33 @@ import { PersonaStatsPoints } from "../utils/types";
 
 const API_KEY_STORAGE = "persona_ai_api_key";
 const BASE_URL_STORAGE = "persona_ai_base_url";
+type CanonicalStatKey = keyof PersonaStatsPoints;
+
+const STAT_KEY_ALIASES: Record<string, CanonicalStatKey> = {
+  knowledge: "knowledge",
+  courage: "courage",
+  charm: "charm",
+  kindness: "kindness",
+  dexterity: "dexterity",
+  expression: "expression",
+  diligence: "diligence",
+  guts: "courage",
+  proficiency: "dexterity",
+  academics: "knowledge",
+  bravery: "courage",
+  social: "charm",
+  understanding: "kindness",
+  口才: "expression",
+  学识: "knowledge",
+  知识: "knowledge",
+  勇气: "courage",
+  魅力: "charm",
+  体贴: "kindness",
+  灵巧: "dexterity",
+  表达: "expression",
+  毅力: "diligence",
+  专注: "diligence",
+};
 
 export interface AIConfig {
   apiKey: string;
@@ -48,12 +75,49 @@ export const getAIConfig = async (): Promise<AIConfig | null> => {
   return { apiKey, baseURL: baseURL || "https://api.openai.com/v1" };
 };
 
+const emptyPoints = (): PersonaStatsPoints => ({
+  knowledge: 0,
+  courage: 0,
+  charm: 0,
+  kindness: 0,
+  dexterity: 0,
+  expression: 0,
+  diligence: 0,
+});
+
+const normalizeStatValue = (value: unknown): number => {
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) return 0;
+  return Math.min(3, Math.max(0, Math.round(numeric)));
+};
+
+const normalizeAliasKey = (rawKey: string): CanonicalStatKey | null => {
+  const compact = rawKey.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  return STAT_KEY_ALIASES[compact] ?? STAT_KEY_ALIASES[rawKey.trim()] ?? null;
+};
+
+export const normalizePersonaStatsPoints = (
+  raw: unknown,
+): PersonaStatsPoints => {
+  const normalized = emptyPoints();
+  if (!raw || typeof raw !== "object") {
+    return normalized;
+  }
+
+  Object.entries(raw as Record<string, unknown>).forEach(([key, value]) => {
+    const canonicalKey = normalizeAliasKey(key);
+    if (!canonicalKey) return;
+    normalized[canonicalKey] = normalizeStatValue(value);
+  });
+
+  return normalized;
+};
+
 export const analyzeActivityWithAI = async (
   activity: string,
   feeling: string,
 ): Promise<PersonaStatsPoints> => {
   const config = await getAIConfig();
-  const currentLanguage = i18n.language || "zh";
 
   if (!config || !config.apiKey) {
     return fallbackHeuristic(activity, feeling);
@@ -149,7 +213,8 @@ export const analyzeActivityWithAI = async (
 
     // Clean up content (sometimes markdown code blocks are included)
     const jsonStr = content.replace(/```json\n?|\n?```/g, "").trim();
-    const stats: PersonaStatsPoints = JSON.parse(jsonStr);
+    const parsed = JSON.parse(jsonStr);
+    const stats = normalizePersonaStatsPoints(parsed);
 
     console.log(
       `AI Analysis Successful via ${baseURL.includes("googleapis.com") ? "Gemini" : "OpenAI/DeepSeek"}`,
@@ -166,15 +231,7 @@ const fallbackHeuristic = (
   feeling: string,
 ): PersonaStatsPoints => {
   const text = (activity + feeling).toLowerCase();
-  const stats: PersonaStatsPoints = {
-    knowledge: 0,
-    courage: 0,
-    charm: 0,
-    kindness: 0,
-    dexterity: 0,
-    expression: 0,
-    diligence: 0,
-  };
+  const stats = emptyPoints();
 
   if (text.match(/book|study|read|class|learn|学习|看书|上课/))
     stats.knowledge += 2;
@@ -197,5 +254,5 @@ const fallbackHeuristic = (
     stats[randomKey] += 1;
   }
 
-  return stats;
+  return normalizePersonaStatsPoints(stats);
 };

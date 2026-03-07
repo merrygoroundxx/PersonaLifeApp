@@ -1,4 +1,6 @@
-import { analyzeActivityWithAI } from "../services/aiService";
-import { PersonaStatsPoints } from "./types";
+import {
+  analyzeActivityWithAI,
+  normalizePersonaStatsPoints,
+} from "../services/aiService";
 
-export { analyzeActivityWithAI };
+export { analyzeActivityWithAI, normalizePersonaStatsPoints };

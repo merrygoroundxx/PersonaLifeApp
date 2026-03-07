@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { eachDayOfInterval, endOfMonth, format, startOfMonth } from "date-fns";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import PersonaBackground from "../components/PersonaBackground";
@@ -8,28 +9,32 @@ import PersonaContainer from "../components/PersonaContainer";
 import StickerText from "../components/StickerText";
 
 import { useTheme } from "../context/ThemeContext";
+import { normalizePersonaStatsPoints } from "../utils/aiModel";
 import { ActivityRecord, PersonaStatsPoints } from "../utils/types";
 
 const STORAGE_KEY = "@persona_activities";
 
 export default function HistoryScreen() {
   const { t } = useTranslation();
-  const { currentTheme, themeConfig } = useTheme();
+  const { themeConfig } = useTheme();
   const [activities, setActivities] = useState<ActivityRecord[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
+  const loadData = useCallback(async () => {
+    const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
+    if (!jsonValue) {
+      setActivities([]);
+      return;
+    }
+    const data: ActivityRecord[] = JSON.parse(jsonValue);
+    setActivities([...data].sort((a, b) => b.timestamp - a.timestamp));
   }, []);
 
-  const loadData = async () => {
-    const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
-    if (jsonValue) {
-      // 按时间倒序
-      const data: ActivityRecord[] = JSON.parse(jsonValue);
-      setActivities(data.sort((a, b) => b.timestamp - a.timestamp));
-    }
-  };
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
   // 生成当前月份的日历天数
   const today = new Date();
@@ -153,37 +158,39 @@ export default function HistoryScreen() {
             >
               <View
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 8,
+                  position: "relative",
+                  paddingBottom: 26,
                 }}
               >
-                <StickerText
-                  text={record.activityName}
-                  themeConfig={themeConfig}
-                  fontSize={18}
-                />
+                <View style={{ marginBottom: 8, paddingRight: 64 }}>
+                  <StickerText
+                    text={record.activityName}
+                    themeConfig={themeConfig}
+                    fontSize={18}
+                  />
+                </View>
                 <StickerText
                   text={format(new Date(record.timestamp), "HH:mm")}
                   themeConfig={themeConfig}
                   fontSize={12}
-                  style={{ opacity: 0.7 }}
+                  style={{ opacity: 0.7, position: "absolute", right: 0, bottom: 0 }}
                 />
               </View>
               <StickerText
                 text={`"${record.feeling}"`}
                 themeConfig={themeConfig}
                 fontSize={14}
-            style={{ marginBottom: 10 }}
+                style={{ marginBottom: 10 }}
               />
 
               {/* 显示提升的数值 */}
               <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {themeConfig.stats.map((key) => {
-                  const points =
+                  const points = normalizePersonaStatsPoints(
                     (record as any).gainedPoints ??
-                    (record as any).gainedStats ??
-                    ({} as PersonaStatsPoints);
+                      (record as any).gainedStats ??
+                      ({} as PersonaStatsPoints),
+                  );
                   const val = points[key];
                   if (!val || val === 0) return null;
                   return (

@@ -40,7 +40,7 @@
     "iamthou": "“吾即汝，汝即吾……”"
   },
   "ai": {
-    "system_prompt": "你是一个 Persona 游戏的参数分析专家。分析用户的活动和感受，然后给 7 个核心维度分配分数 (0-3)。\n维度包括：[知识, 勇气, 魅力, 体贴, 灵巧, 表达, 毅力]。\n仅返回 JSON 对象。不要输出多余文字。"
+    "system_prompt": "你是一个 Persona 游戏的参数分析专家。分析用户的活动和感受，然后给 7 个核心维度分配分数 (0-3)。\n必须只使用以下英文键名输出 JSON：knowledge, courage, charm, kindness, dexterity, expression, diligence。\n仅返回 JSON 对象，不要输出多余文字。\n示例：{\"knowledge\":2,\"courage\":0,\"charm\":0,\"kindness\":1,\"dexterity\":0,\"expression\":0,\"diligence\":0}"
   },
   "titles": {
     "p3": {
